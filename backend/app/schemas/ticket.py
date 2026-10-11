@@ -1,18 +1,6 @@
-from enum import Enum
+from pydantic import BaseModel, ConfigDict
 
-from pydantic import BaseModel
-
-
-class TicketPriority(str, Enum):
-    low = "low"
-    medium = "medium"
-    high = "high"
-
-
-class TicketStatus(str, Enum):
-    open = "open"
-    in_progress = "in_progress"
-    closed = "closed"
+from app.domain.ticket import TicketPriority, TicketStatus
 
 
 class TicketCreate(BaseModel):
@@ -22,6 +10,8 @@ class TicketCreate(BaseModel):
 
 
 class TicketRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     title: str
     description: str
