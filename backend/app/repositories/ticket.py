@@ -22,3 +22,9 @@ class TicketRepository:
 
     def get_by_id(self, ticket_id: int) -> Ticket | None:
         return self.db.get(Ticket, ticket_id)
+
+    def save(self, ticket: Ticket) -> Ticket:
+        self.db.commit()
+        self.db.refresh(ticket)
+
+        return ticket
