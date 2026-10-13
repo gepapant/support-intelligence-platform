@@ -1,14 +1,21 @@
-from sqlalchemy import Enum, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Enum, ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.domain.ticket import TicketPriority, TicketStatus
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class Ticket(Base):
     __tablename__ = "tickets"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(
+        primary_key=True
+    )
 
     title: Mapped[str] = mapped_column(
         String(200),
@@ -21,13 +28,29 @@ class Ticket(Base):
     )
 
     priority: Mapped[TicketPriority] = mapped_column(
-        Enum(TicketPriority, name="ticket_priority"),
+        Enum(
+            TicketPriority,
+            name="ticket_priority",
+        ),
         nullable=False,
         default=TicketPriority.medium,
     )
 
     status: Mapped[TicketStatus] = mapped_column(
-        Enum(TicketStatus, name="ticket_status"),
+        Enum(
+            TicketStatus,
+            name="ticket_status",
+        ),
         nullable=False,
         default=TicketStatus.open,
+    )
+
+    assignee_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
+
+    assignee: Mapped["User | None"] = relationship(
+        back_populates="assigned_tickets"
     )

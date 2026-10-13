@@ -28,3 +28,16 @@ class TicketRepository:
         self.db.refresh(ticket)
 
         return ticket
+    def get_by_assignee_id(
+        self,
+        user_id: int,
+    ) -> list[Ticket]:
+        statement = (
+            select(Ticket)
+            .where(Ticket.assignee_id == user_id)
+            .order_by(Ticket.id)
+        )
+
+        return list(
+            self.db.scalars(statement).all()
+        )

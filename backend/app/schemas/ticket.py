@@ -35,3 +35,8 @@ class TicketRead(BaseModel):
     description: str
     priority: TicketPriority
     status: TicketStatus
+    assignee_id: int | None
+
+
+class TicketAssignment(BaseModel):
+    assignee_id: int | None
