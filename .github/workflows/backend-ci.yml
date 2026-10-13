@@ -47,4 +47,7 @@ jobs:
           DB_NAME: ci_test
           DB_USER: ci_test
           DB_PASSWORD: ci_test
+          AUTH_SECRET_KEY: "ci-only-secret-key-that-is-at-least-32-characters-long"
+          AUTH_ALGORITHM: "HS256"
+          AUTH_ACCESS_TOKEN_EXPIRE_MINUTES: "30"
         run: uv run pytest -v
