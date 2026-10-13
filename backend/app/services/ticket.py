@@ -1,8 +1,10 @@
-from app.domain.ticket import TicketStatus
+from app.domain.ticket import TicketStatus, TicketPriority 
 from app.models.ticket import Ticket
 from app.repositories.ticket import TicketRepository
 from app.repositories.user import UserRepository
 from app.schemas.ticket import TicketCreate, TicketUpdate
+from app.domain.user import UserRole
+from app.models.user import User
 
 
 class TicketNotFoundError(Exception):
@@ -16,6 +18,12 @@ class AssigneeNotFoundError(Exception):
 class InactiveAssigneeError(Exception):
     pass
 
+class InvalidStatusTransitionError(Exception):
+    pass
+
+
+class TicketAccessDeniedError(Exception):
+    pass
 
 class TicketService:
     def __init__(
@@ -39,8 +47,21 @@ class TicketService:
 
         return self.repository.add(ticket)
 
-    def list_tickets(self) -> list[Ticket]:
-        return self.repository.get_all()
+    def list_tickets(
+        self,
+        status: TicketStatus | None = None,
+        priority: TicketPriority | None = None,
+        assignee_id: int | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[Ticket]:
+        return self.repository.get_all(
+            status=status,
+            priority=priority,
+            assignee_id=assignee_id,
+            limit=limit,
+            offset=offset,
+        )
 
     def get_ticket(
         self,
@@ -113,5 +134,51 @@ class TicketService:
             raise InactiveAssigneeError
 
         ticket.assignee_id = user.id
+
+        return self.repository.save(ticket)
+    def update_ticket_status(
+        self,
+        ticket_id: int,
+        new_status: TicketStatus,
+        current_user: User,
+    ) -> Ticket:
+        ticket = self.repository.get_by_id(
+            ticket_id
+        )
+
+        if ticket is None:
+            raise TicketNotFoundError
+
+        is_admin = (
+            current_user.role == UserRole.admin
+        )
+
+        is_assignee = (
+            ticket.assignee_id == current_user.id
+        )
+
+        if not is_admin and not is_assignee:
+            raise TicketAccessDeniedError
+
+        allowed_transitions = {
+            TicketStatus.open: {
+                TicketStatus.in_progress,
+            },
+            TicketStatus.in_progress: {
+                TicketStatus.closed,
+            },
+            TicketStatus.closed: {
+                TicketStatus.open,
+            },
+        }
+
+        allowed_next_statuses = allowed_transitions[
+            ticket.status
+        ]
+
+        if new_status not in allowed_next_statuses:
+            raise InvalidStatusTransitionError
+
+        ticket.status = new_status
 
         return self.repository.save(ticket)
