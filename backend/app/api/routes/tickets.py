@@ -6,10 +6,14 @@ from app.repositories.ticket import TicketRepository
 from app.schemas.ticket import TicketCreate, TicketRead, TicketUpdate
 from app.services.ticket import TicketService
 
+from app.api.dependencies.auth import get_current_user
 
 router = APIRouter(
     prefix="/tickets",
     tags=["Tickets"],
+    dependencies=[
+        Depends(get_current_user),
+    ],
 )
 
 

@@ -1,5 +1,5 @@
-def test_create_ticket(client):
-    response = client.post(
+def test_create_ticket(authenticated_client):
+    response = authenticated_client.post(
         "/tickets",
         json={
             "title": "Password reset issue",
@@ -20,8 +20,9 @@ def test_create_ticket(client):
     assert data["priority"] == "high"
     assert data["status"] == "open"
 
-def test_create_ticket_rejects_invalid_priority(client):
-    response = client.post(
+
+def test_create_ticket_rejects_invalid_priority(authenticated_client):
+    response = authenticated_client.post(
         "/tickets",
         json={
             "title": "Broken login",
@@ -32,8 +33,9 @@ def test_create_ticket_rejects_invalid_priority(client):
 
     assert response.status_code == 422
 
-def test_get_ticket(client):
-    create_response = client.post(
+
+def test_get_ticket(authenticated_client):
+    create_response = authenticated_client.post(
         "/tickets",
         json={
             "title": "Missing refund",
@@ -44,7 +46,9 @@ def test_get_ticket(client):
 
     ticket_id = create_response.json()["id"]
 
-    response = client.get(f"/tickets/{ticket_id}")
+    response = authenticated_client.get(
+        f"/tickets/{ticket_id}"
+    )
 
     assert response.status_code == 200
 
@@ -53,8 +57,11 @@ def test_get_ticket(client):
     assert data["id"] == ticket_id
     assert data["title"] == "Missing refund"
 
-def test_get_missing_ticket_returns_404(client):
-    response = client.get("/tickets/999999")
+
+def test_get_missing_ticket_returns_404(authenticated_client):
+    response = authenticated_client.get(
+        "/tickets/999999"
+    )
 
     assert response.status_code == 404
     assert response.json() == {
@@ -62,8 +69,8 @@ def test_get_missing_ticket_returns_404(client):
     }
 
 
-def test_list_tickets(client):
-    client.post(
+def test_list_tickets(authenticated_client):
+    authenticated_client.post(
         "/tickets",
         json={
             "title": "First ticket",
@@ -72,7 +79,7 @@ def test_list_tickets(client):
         },
     )
 
-    client.post(
+    authenticated_client.post(
         "/tickets",
         json={
             "title": "Second ticket",
@@ -81,7 +88,7 @@ def test_list_tickets(client):
         },
     )
 
-    response = client.get("/tickets")
+    response = authenticated_client.get("/tickets")
 
     assert response.status_code == 200
 
@@ -91,8 +98,9 @@ def test_list_tickets(client):
     assert data[0]["title"] == "First ticket"
     assert data[1]["title"] == "Second ticket"
 
-def test_update_ticket_status(client):
-    create_response = client.post(
+
+def test_update_ticket_status(authenticated_client):
+    create_response = authenticated_client.post(
         "/tickets",
         json={
             "title": "Login issue",
@@ -103,7 +111,7 @@ def test_update_ticket_status(client):
 
     ticket_id = create_response.json()["id"]
 
-    response = client.patch(
+    response = authenticated_client.patch(
         f"/tickets/{ticket_id}",
         json={
             "status": "closed",
@@ -119,8 +127,8 @@ def test_update_ticket_status(client):
     assert data["priority"] == "medium"
 
 
-def test_update_ticket_priority(client):
-    create_response = client.post(
+def test_update_ticket_priority(authenticated_client):
+    create_response = authenticated_client.post(
         "/tickets",
         json={
             "title": "Billing problem",
@@ -131,7 +139,7 @@ def test_update_ticket_priority(client):
 
     ticket_id = create_response.json()["id"]
 
-    response = client.patch(
+    response = authenticated_client.patch(
         f"/tickets/{ticket_id}",
         json={
             "priority": "high",
@@ -141,8 +149,9 @@ def test_update_ticket_priority(client):
     assert response.status_code == 200
     assert response.json()["priority"] == "high"
 
-def test_update_missing_ticket_returns_404(client):
-    response = client.patch(
+
+def test_update_missing_ticket_returns_404(authenticated_client):
+    response = authenticated_client.patch(
         "/tickets/999999",
         json={
             "status": "closed",
@@ -154,8 +163,9 @@ def test_update_missing_ticket_returns_404(client):
         "detail": "Ticket not found"
     }
 
-def test_update_ticket_rejects_invalid_status(client):
-    create_response = client.post(
+
+def test_update_ticket_rejects_invalid_status(authenticated_client):
+    create_response = authenticated_client.post(
         "/tickets",
         json={
             "title": "Test ticket",
@@ -166,7 +176,7 @@ def test_update_ticket_rejects_invalid_status(client):
 
     ticket_id = create_response.json()["id"]
 
-    response = client.patch(
+    response = authenticated_client.patch(
         f"/tickets/{ticket_id}",
         json={
             "status": "destroyed",
@@ -176,8 +186,8 @@ def test_update_ticket_rejects_invalid_status(client):
     assert response.status_code == 422
 
 
-def test_update_ticket_rejects_empty_body(client):
-    create_response = client.post(
+def test_update_ticket_rejects_empty_body(authenticated_client):
+    create_response = authenticated_client.post(
         "/tickets",
         json={
             "title": "Test ticket",
@@ -188,9 +198,26 @@ def test_update_ticket_rejects_empty_body(client):
 
     ticket_id = create_response.json()["id"]
 
-    response = client.patch(
+    response = authenticated_client.patch(
         f"/tickets/{ticket_id}",
         json={},
     )
 
     assert response.status_code == 422
+
+
+def test_tickets_require_authentication(client):
+    response = client.get("/tickets")
+
+    assert response.status_code == 401
+
+
+def test_invalid_token_is_rejected(client):
+    response = client.get(
+        "/tickets",
+        headers={
+            "Authorization": "Bearer invalid-token"
+        },
+    )
+
+    assert response.status_code == 401

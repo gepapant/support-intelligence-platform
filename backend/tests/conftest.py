@@ -8,6 +8,10 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
 
+from app.core.security import create_access_token
+from app.domain.user import UserRole
+from app.models.user import User
+
 
 TEST_DATABASE_URL = "sqlite://"
 
@@ -45,3 +49,61 @@ def client():
     app.dependency_overrides.clear()
 
     Base.metadata.drop_all(bind=engine)
+
+@pytest.fixture()
+def authenticated_client(client):
+    db = TestingSessionLocal()
+
+    user = User(
+        email="test-agent@example.com",
+        hashed_password="not-used-in-this-test",
+        role=UserRole.agent,
+        is_active=True,
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    token = create_access_token(
+        user_id=user.id
+    )
+
+    db.close()
+
+    client.headers.update(
+        {
+            "Authorization": f"Bearer {token}"
+        }
+    )
+
+    return client
+
+@pytest.fixture()
+def admin_client(client):
+    db = TestingSessionLocal()
+
+    user = User(
+        email="admin@example.com",
+        hashed_password="not-used-in-this-test",
+        role=UserRole.admin,
+        is_active=True,
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    token = create_access_token(
+        user_id=user.id
+    )
+
+    db.close()
+
+    client.headers.update(
+        {
+            "Authorization": f"Bearer {token}"
+        }
+    )
+
+    return client
