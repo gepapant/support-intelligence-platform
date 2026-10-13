@@ -1,10 +1,10 @@
-from app.domain.ticket import TicketStatus, TicketPriority 
+from app.domain.ticket import TicketPriority, TicketStatus
+from app.domain.user import UserRole
 from app.models.ticket import Ticket
+from app.models.user import User
 from app.repositories.ticket import TicketRepository
 from app.repositories.user import UserRepository
 from app.schemas.ticket import TicketCreate, TicketUpdate
-from app.domain.user import UserRole
-from app.models.user import User
 
 
 class TicketNotFoundError(Exception):
@@ -18,12 +18,14 @@ class AssigneeNotFoundError(Exception):
 class InactiveAssigneeError(Exception):
     pass
 
+
 class InvalidStatusTransitionError(Exception):
     pass
 
 
 class TicketAccessDeniedError(Exception):
     pass
+
 
 class TicketService:
     def __init__(

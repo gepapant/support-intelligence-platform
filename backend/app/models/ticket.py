@@ -1,11 +1,5 @@
-from typing import TYPE_CHECKING
-
-from sqlalchemy import Enum, ForeignKey, String, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.db.base import Base
-from app.domain.ticket import TicketPriority, TicketStatus
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     DateTime,
@@ -15,6 +9,10 @@ from sqlalchemy import (
     Text,
     func,
 )
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.base import Base
+from app.domain.ticket import TicketPriority, TicketStatus
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -65,10 +63,10 @@ class Ticket(Base):
         back_populates="assigned_tickets"
     )
     created_at: Mapped[datetime] = mapped_column(
-    DateTime(timezone=True),
-    server_default=func.now(),
-    nullable=False,
-)
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
