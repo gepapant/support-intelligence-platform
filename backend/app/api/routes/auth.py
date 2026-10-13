@@ -1,18 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies.auth import get_current_user
+from app.core.security import create_access_token
 from app.db.session import get_db
+from app.models.user import User
 from app.repositories.user import UserRepository
+from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.user import UserCreate, UserRead
 from app.services.user import (
     UserAlreadyExistsError,
     UserService,
 )
-from app.core.security import create_access_token
-from app.schemas.auth import LoginRequest, TokenResponse
-from app.api.dependencies.auth import get_current_user
-from app.models.user import User
-
 
 router = APIRouter(
     prefix="/auth",
@@ -46,6 +45,7 @@ def register_user(
             detail="A user with this email already exists",
         )
 
+
 @router.post(
     "/login",
     response_model=TokenResponse,
@@ -68,13 +68,12 @@ def login(
             },
         )
 
-    access_token = create_access_token(
-        user_id=user.id
-    )
+    access_token = create_access_token(user_id=user.id)
 
     return TokenResponse(
         access_token=access_token,
     )
+
 
 @router.get(
     "/me",

@@ -21,9 +21,7 @@ if TYPE_CHECKING:
 class Ticket(Base):
     __tablename__ = "tickets"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     title: Mapped[str] = mapped_column(
         String(200),
@@ -59,9 +57,7 @@ class Ticket(Base):
         index=True,
     )
 
-    assignee: Mapped["User | None"] = relationship(
-        back_populates="assigned_tickets"
-    )
+    assignee: Mapped["User | None"] = relationship(back_populates="assigned_tickets")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

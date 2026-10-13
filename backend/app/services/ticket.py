@@ -69,25 +69,19 @@ class TicketService:
         self,
         ticket_id: int,
     ) -> Ticket | None:
-        return self.repository.get_by_id(
-            ticket_id
-        )
+        return self.repository.get_by_id(ticket_id)
 
     def update_ticket(
         self,
         ticket_id: int,
         ticket_data: TicketUpdate,
     ) -> Ticket | None:
-        ticket = self.repository.get_by_id(
-            ticket_id
-        )
+        ticket = self.repository.get_by_id(ticket_id)
 
         if ticket is None:
             return None
 
-        updates = ticket_data.model_dump(
-            exclude_unset=True
-        )
+        updates = ticket_data.model_dump(exclude_unset=True)
 
         for field_name, value in updates.items():
             setattr(
@@ -102,18 +96,14 @@ class TicketService:
         self,
         user_id: int,
     ) -> list[Ticket]:
-        return self.repository.get_by_assignee_id(
-            user_id
-        )
+        return self.repository.get_by_assignee_id(user_id)
 
     def assign_ticket(
         self,
         ticket_id: int,
         assignee_id: int | None,
     ) -> Ticket:
-        ticket = self.repository.get_by_id(
-            ticket_id
-        )
+        ticket = self.repository.get_by_id(ticket_id)
 
         if ticket is None:
             raise TicketNotFoundError
@@ -121,13 +111,9 @@ class TicketService:
         if assignee_id is None:
             ticket.assignee_id = None
 
-            return self.repository.save(
-                ticket
-            )
+            return self.repository.save(ticket)
 
-        user = self.user_repository.get_by_id(
-            assignee_id
-        )
+        user = self.user_repository.get_by_id(assignee_id)
 
         if user is None:
             raise AssigneeNotFoundError
@@ -138,26 +124,21 @@ class TicketService:
         ticket.assignee_id = user.id
 
         return self.repository.save(ticket)
+
     def update_ticket_status(
         self,
         ticket_id: int,
         new_status: TicketStatus,
         current_user: User,
     ) -> Ticket:
-        ticket = self.repository.get_by_id(
-            ticket_id
-        )
+        ticket = self.repository.get_by_id(ticket_id)
 
         if ticket is None:
             raise TicketNotFoundError
 
-        is_admin = (
-            current_user.role == UserRole.admin
-        )
+        is_admin = current_user.role == UserRole.admin
 
-        is_assignee = (
-            ticket.assignee_id == current_user.id
-        )
+        is_assignee = ticket.assignee_id == current_user.id
 
         if not is_admin and not is_assignee:
             raise TicketAccessDeniedError
@@ -174,9 +155,7 @@ class TicketService:
             },
         }
 
-        allowed_next_statuses = allowed_transitions[
-            ticket.status
-        ]
+        allowed_next_statuses = allowed_transitions[ticket.status]
 
         if new_status not in allowed_next_statuses:
             raise InvalidStatusTransitionError

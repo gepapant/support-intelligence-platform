@@ -4,14 +4,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.security import create_access_token
 from app.db.base import Base
 from app.db.session import get_db
-from app.main import app
-
-from app.core.security import create_access_token
 from app.domain.user import UserRole
+from app.main import app
 from app.models.user import User
-
 
 TEST_DATABASE_URL = "sqlite://"
 
@@ -50,6 +48,7 @@ def client():
 
     Base.metadata.drop_all(bind=engine)
 
+
 @pytest.fixture()
 def authenticated_client(client):
     db = TestingSessionLocal()
@@ -65,19 +64,14 @@ def authenticated_client(client):
     db.commit()
     db.refresh(user)
 
-    token = create_access_token(
-        user_id=user.id
-    )
+    token = create_access_token(user_id=user.id)
 
     db.close()
 
-    client.headers.update(
-        {
-            "Authorization": f"Bearer {token}"
-        }
-    )
+    client.headers.update({"Authorization": f"Bearer {token}"})
 
     return client
+
 
 @pytest.fixture()
 def admin_client(client):
@@ -94,16 +88,10 @@ def admin_client(client):
     db.commit()
     db.refresh(user)
 
-    token = create_access_token(
-        user_id=user.id
-    )
+    token = create_access_token(user_id=user.id)
 
     db.close()
 
-    client.headers.update(
-        {
-            "Authorization": f"Bearer {token}"
-        }
-    )
+    client.headers.update({"Authorization": f"Bearer {token}"})
 
     return client

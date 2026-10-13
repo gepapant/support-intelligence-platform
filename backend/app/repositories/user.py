@@ -9,9 +9,7 @@ class UserRepository:
         self.db = db
 
     def get_by_email(self, email: str) -> User | None:
-        statement = select(User).where(
-            User.email == email
-        )
+        statement = select(User).where(User.email == email)
 
         return self.db.scalar(statement)
 
@@ -21,9 +19,7 @@ class UserRepository:
     def get_all(self) -> list[User]:
         statement = select(User).order_by(User.id)
 
-        return list(
-            self.db.scalars(statement).all()
-        )
+        return list(self.db.scalars(statement).all())
 
     def add(self, user: User) -> User:
         self.db.add(user)

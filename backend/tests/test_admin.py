@@ -1,7 +1,5 @@
 def test_admin_can_list_users(admin_client):
-    response = admin_client.get(
-        "/admin/users"
-    )
+    response = admin_client.get("/admin/users")
 
     assert response.status_code == 200
 
@@ -17,20 +15,14 @@ def test_admin_can_list_users(admin_client):
 def test_agent_cannot_list_users(
     authenticated_client,
 ):
-    response = authenticated_client.get(
-        "/admin/users"
-    )
+    response = authenticated_client.get("/admin/users")
 
     assert response.status_code == 403
 
-    assert response.json() == {
-        "detail": "Admin access required"
-    }
+    assert response.json() == {"detail": "Admin access required"}
 
 
 def test_anonymous_user_cannot_list_users(client):
-    response = client.get(
-        "/admin/users"
-    )
+    response = client.get("/admin/users")
 
     assert response.status_code == 401

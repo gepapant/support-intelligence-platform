@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.domain.ticket import TicketPriority, TicketStatus
 
+
 class TicketCreate(BaseModel):
     title: str
     description: str

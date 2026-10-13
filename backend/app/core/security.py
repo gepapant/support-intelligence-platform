@@ -5,7 +5,6 @@ from pwdlib import PasswordHash
 
 from app.core.config import auth_settings
 
-
 password_hash = PasswordHash.recommended()
 
 
@@ -26,9 +25,7 @@ def verify_password(
 def create_access_token(user_id: int) -> str:
     now = datetime.now(timezone.utc)
 
-    expires_at = now + timedelta(
-        minutes=auth_settings.access_token_expire_minutes
-    )
+    expires_at = now + timedelta(minutes=auth_settings.access_token_expire_minutes)
 
     payload = {
         "sub": str(user_id),
@@ -42,6 +39,7 @@ def create_access_token(user_id: int) -> str:
         auth_settings.secret_key,
         algorithm=auth_settings.algorithm,
     )
+
 
 def decode_access_token(token: str) -> dict:
     return jwt.decode(
