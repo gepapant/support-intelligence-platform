@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.models.ticket import Ticket
 
+from app.domain.ticket import TicketPriority, TicketStatus
+
 
 class TicketRepository:
     def __init__(self, db: Session):
@@ -15,10 +17,41 @@ class TicketRepository:
 
         return ticket
 
-    def get_all(self) -> list[Ticket]:
-        statement = select(Ticket).order_by(Ticket.id)
+    def get_all(
+        self,
+        status: TicketStatus | None = None,
+        priority: TicketPriority | None = None,
+        assignee_id: int | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[Ticket]:
+        statement = select(Ticket)
 
-        return list(self.db.scalars(statement).all())
+        if status is not None:
+            statement = statement.where(
+                Ticket.status == status
+            )
+
+        if priority is not None:
+            statement = statement.where(
+                Ticket.priority == priority
+            )
+
+        if assignee_id is not None:
+            statement = statement.where(
+                Ticket.assignee_id == assignee_id
+            )
+
+        statement = (
+            statement
+            .order_by(Ticket.id)
+            .offset(offset)
+            .limit(limit)
+        )
+
+        return list(
+            self.db.scalars(statement).all()
+        )
 
     def get_by_id(self, ticket_id: int) -> Ticket | None:
         return self.db.get(Ticket, ticket_id)

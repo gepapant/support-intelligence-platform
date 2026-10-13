@@ -1,12 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.repositories.ticket import TicketRepository
-from app.schemas.ticket import TicketCreate, TicketRead, TicketUpdate
-from app.services.ticket import TicketService
-
-from app.api.dependencies.auth import get_current_user
 
 from app.api.dependencies.auth import (
     get_current_user,
@@ -19,13 +15,17 @@ from app.schemas.ticket import (
     TicketCreate,
     TicketRead,
     TicketUpdate,
+    TicketStatusUpdate,
 )
 from app.services.ticket import (
     AssigneeNotFoundError,
     InactiveAssigneeError,
     TicketNotFoundError,
     TicketService,
+    InvalidStatusTransitionError,
+    TicketAccessDeniedError,
 )
+from app.domain.ticket import TicketPriority, TicketStatus
 
 router = APIRouter(
     prefix="/tickets",
@@ -79,10 +79,33 @@ def get_my_tickets(
     "",
     response_model=list[TicketRead],
 )
-def get_tickets(
-    service: TicketService = Depends(get_ticket_service),
+def list_tickets(
+    ticket_status: TicketStatus | None = Query(
+        default=None,
+        alias="status",
+    ),
+    priority: TicketPriority | None = None,
+    assignee_id: int | None = None,
+    limit: int = Query(
+        default=20,
+        ge=1,
+        le=100,
+    ),
+    offset: int = Query(
+        default=0,
+        ge=0,
+    ),
+    service: TicketService = Depends(
+        get_ticket_service
+    ),
 ):
-    return service.list_tickets()
+    return service.list_tickets(
+        status=ticket_status,
+        priority=priority,
+        assignee_id=assignee_id,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get(
@@ -161,4 +184,42 @@ def assign_ticket(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Assignee is inactive",
+        )
+@router.patch(
+    "/{ticket_id}/status",
+    response_model=TicketRead,
+)
+def update_ticket_status(
+    ticket_id: int,
+    status_update: TicketStatusUpdate,
+    current_user: User = Depends(
+        get_current_user
+    ),
+    service: TicketService = Depends(
+        get_ticket_service
+    ),
+):
+    try:
+        return service.update_ticket_status(
+            ticket_id=ticket_id,
+            new_status=status_update.status,
+            current_user=current_user,
+        )
+
+    except TicketNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ticket not found",
+        )
+
+    except TicketAccessDeniedError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You cannot change this ticket's status",
+        )
+
+    except InvalidStatusTransitionError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Invalid ticket status transition",
         )

@@ -1,7 +1,8 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.domain.ticket import TicketPriority, TicketStatus
-
 
 class TicketCreate(BaseModel):
     title: str
@@ -13,7 +14,6 @@ class TicketUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     priority: TicketPriority | None = None
-    status: TicketStatus | None = None
 
     @model_validator(mode="after")
     def validate_update(self):
@@ -36,7 +36,13 @@ class TicketRead(BaseModel):
     priority: TicketPriority
     status: TicketStatus
     assignee_id: int | None
+    created_at: datetime
+    updated_at: datetime
 
 
 class TicketAssignment(BaseModel):
     assignee_id: int | None
+
+
+class TicketStatusUpdate(BaseModel):
+    status: TicketStatus
