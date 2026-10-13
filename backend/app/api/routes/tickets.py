@@ -8,6 +8,25 @@ from app.services.ticket import TicketService
 
 from app.api.dependencies.auth import get_current_user
 
+from app.api.dependencies.auth import (
+    get_current_user,
+    require_admin,
+)
+from app.models.user import User
+from app.repositories.user import UserRepository
+from app.schemas.ticket import (
+    TicketAssignment,
+    TicketCreate,
+    TicketRead,
+    TicketUpdate,
+)
+from app.services.ticket import (
+    AssigneeNotFoundError,
+    InactiveAssigneeError,
+    TicketNotFoundError,
+    TicketService,
+)
+
 router = APIRouter(
     prefix="/tickets",
     tags=["Tickets"],
@@ -20,9 +39,13 @@ router = APIRouter(
 def get_ticket_service(
     db: Session = Depends(get_db),
 ) -> TicketService:
-    repository = TicketRepository(db)
+    ticket_repository = TicketRepository(db)
+    user_repository = UserRepository(db)
 
-    return TicketService(repository)
+    return TicketService(
+        repository=ticket_repository,
+        user_repository=user_repository,
+    )
 
 
 @router.post(
@@ -36,6 +59,21 @@ def create_ticket(
 ):
     return service.create_ticket(ticket)
 
+@router.get(
+    "/mine",
+    response_model=list[TicketRead],
+)
+def get_my_tickets(
+    current_user: User = Depends(
+        get_current_user
+    ),
+    service: TicketService = Depends(
+        get_ticket_service
+    ),
+):
+    return service.list_assigned_tickets(
+        user_id=current_user.id
+    )
 
 @router.get(
     "",
@@ -86,3 +124,41 @@ def update_ticket(
         )
 
     return ticket
+
+@router.patch(
+    "/{ticket_id}/assignment",
+    response_model=TicketRead,
+)
+def assign_ticket(
+    ticket_id: int,
+    assignment: TicketAssignment,
+    current_admin: User = Depends(
+        require_admin
+    ),
+    service: TicketService = Depends(
+        get_ticket_service
+    ),
+):
+    try:
+        return service.assign_ticket(
+            ticket_id=ticket_id,
+            assignee_id=assignment.assignee_id,
+        )
+
+    except TicketNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ticket not found",
+        )
+
+    except AssigneeNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assignee not found",
+        )
+
+    except InactiveAssigneeError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Assignee is inactive",
+        )
