@@ -50,9 +50,7 @@ def test_me_returns_authenticated_user(client):
 
     response = client.get(
         "/auth/me",
-        headers={
-            "Authorization": f"Bearer {token}"
-        },
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == 200
@@ -62,6 +60,7 @@ def test_me_returns_authenticated_user(client):
     assert data["email"] == "me@example.com"
     assert data["role"] == "agent"
     assert data["is_active"] is True
+
 
 def test_login_rejects_wrong_password(client):
     register_response = client.post(
@@ -83,9 +82,7 @@ def test_login_rejects_wrong_password(client):
     )
 
     assert response.status_code == 401
-    assert response.json() == {
-        "detail": "Invalid email or password"
-    }
+    assert response.json() == {"detail": "Invalid email or password"}
 
 
 def test_login_rejects_unknown_email(client):
@@ -98,9 +95,7 @@ def test_login_rejects_unknown_email(client):
     )
 
     assert response.status_code == 401
-    assert response.json() == {
-        "detail": "Invalid email or password"
-    }
+    assert response.json() == {"detail": "Invalid email or password"}
 
 
 def test_duplicate_registration_returns_409(client):
@@ -122,6 +117,4 @@ def test_duplicate_registration_returns_409(client):
     )
 
     assert second_response.status_code == 409
-    assert second_response.json() == {
-        "detail": "A user with this email already exists"
-    }
+    assert second_response.json() == {"detail": "A user with this email already exists"}

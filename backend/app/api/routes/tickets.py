@@ -1,31 +1,30 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-
-from app.db.session import get_db
-from app.repositories.ticket import TicketRepository
 
 from app.api.dependencies.auth import (
     get_current_user,
     require_admin,
 )
+from app.db.session import get_db
+from app.domain.ticket import TicketPriority, TicketStatus
 from app.models.user import User
+from app.repositories.ticket import TicketRepository
 from app.repositories.user import UserRepository
 from app.schemas.ticket import (
     TicketAssignment,
     TicketCreate,
     TicketRead,
-    TicketUpdate,
     TicketStatusUpdate,
+    TicketUpdate,
 )
 from app.services.ticket import (
     AssigneeNotFoundError,
     InactiveAssigneeError,
-    TicketNotFoundError,
-    TicketService,
     InvalidStatusTransitionError,
     TicketAccessDeniedError,
+    TicketNotFoundError,
+    TicketService,
 )
-from app.domain.ticket import TicketPriority, TicketStatus
 
 router = APIRouter(
     prefix="/tickets",
@@ -59,21 +58,17 @@ def create_ticket(
 ):
     return service.create_ticket(ticket)
 
+
 @router.get(
     "/mine",
     response_model=list[TicketRead],
 )
 def get_my_tickets(
-    current_user: User = Depends(
-        get_current_user
-    ),
-    service: TicketService = Depends(
-        get_ticket_service
-    ),
+    current_user: User = Depends(get_current_user),
+    service: TicketService = Depends(get_ticket_service),
 ):
-    return service.list_assigned_tickets(
-        user_id=current_user.id
-    )
+    return service.list_assigned_tickets(user_id=current_user.id)
+
 
 @router.get(
     "",
@@ -95,9 +90,7 @@ def list_tickets(
         default=0,
         ge=0,
     ),
-    service: TicketService = Depends(
-        get_ticket_service
-    ),
+    service: TicketService = Depends(get_ticket_service),
 ):
     return service.list_tickets(
         status=ticket_status,
@@ -126,6 +119,7 @@ def get_ticket(
 
     return ticket
 
+
 @router.patch(
     "/{ticket_id}",
     response_model=TicketRead,
@@ -148,6 +142,7 @@ def update_ticket(
 
     return ticket
 
+
 @router.patch(
     "/{ticket_id}/assignment",
     response_model=TicketRead,
@@ -155,12 +150,8 @@ def update_ticket(
 def assign_ticket(
     ticket_id: int,
     assignment: TicketAssignment,
-    current_admin: User = Depends(
-        require_admin
-    ),
-    service: TicketService = Depends(
-        get_ticket_service
-    ),
+    current_admin: User = Depends(require_admin),
+    service: TicketService = Depends(get_ticket_service),
 ):
     try:
         return service.assign_ticket(
@@ -185,6 +176,8 @@ def assign_ticket(
             status_code=status.HTTP_409_CONFLICT,
             detail="Assignee is inactive",
         )
+
+
 @router.patch(
     "/{ticket_id}/status",
     response_model=TicketRead,
@@ -192,12 +185,8 @@ def assign_ticket(
 def update_ticket_status(
     ticket_id: int,
     status_update: TicketStatusUpdate,
-    current_user: User = Depends(
-        get_current_user
-    ),
-    service: TicketService = Depends(
-        get_ticket_service
-    ),
+    current_user: User = Depends(get_current_user),
+    service: TicketService = Depends(get_ticket_service),
 ):
     try:
         return service.update_ticket_status(

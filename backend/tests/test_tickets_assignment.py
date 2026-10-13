@@ -83,9 +83,8 @@ def test_assignment_rejects_unknown_user(
     )
 
     assert response.status_code == 404
-    assert response.json() == {
-        "detail": "Assignee not found"
-    }
+    assert response.json() == {"detail": "Assignee not found"}
+
 
 def test_agent_can_list_own_tickets(
     admin_client,
@@ -132,9 +131,7 @@ def test_agent_can_list_own_tickets(
 
     response = admin_client.get(
         "/tickets/mine",
-        headers={
-            "Authorization": f"Bearer {token}"
-        },
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == 200
@@ -144,6 +141,7 @@ def test_agent_can_list_own_tickets(
     assert len(data) == 1
     assert data[0]["id"] == ticket_id
     assert data[0]["assignee_id"] == agent_id
+
 
 def test_admin_can_unassign_ticket(
     admin_client,
@@ -201,6 +199,4 @@ def test_assignment_rejects_unknown_ticket(
     )
 
     assert response.status_code == 404
-    assert response.json() == {
-        "detail": "Ticket not found"
-    }
+    assert response.json() == {"detail": "Ticket not found"}

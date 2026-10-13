@@ -40,6 +40,14 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --dev
 
+
+      - name: Run Ruff lint
+        run: uv run ruff check .
+
+
+      - name: Check Ruff formatting
+        run: uv run ruff format --check .
+
       - name: Run tests
         env:
           DB_HOST: localhost

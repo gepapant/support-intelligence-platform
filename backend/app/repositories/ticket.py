@@ -1,9 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.ticket import Ticket
-
 from app.domain.ticket import TicketPriority, TicketStatus
+from app.models.ticket import Ticket
 
 
 class TicketRepository:
@@ -28,30 +27,17 @@ class TicketRepository:
         statement = select(Ticket)
 
         if status is not None:
-            statement = statement.where(
-                Ticket.status == status
-            )
+            statement = statement.where(Ticket.status == status)
 
         if priority is not None:
-            statement = statement.where(
-                Ticket.priority == priority
-            )
+            statement = statement.where(Ticket.priority == priority)
 
         if assignee_id is not None:
-            statement = statement.where(
-                Ticket.assignee_id == assignee_id
-            )
+            statement = statement.where(Ticket.assignee_id == assignee_id)
 
-        statement = (
-            statement
-            .order_by(Ticket.id)
-            .offset(offset)
-            .limit(limit)
-        )
+        statement = statement.order_by(Ticket.id).offset(offset).limit(limit)
 
-        return list(
-            self.db.scalars(statement).all()
-        )
+        return list(self.db.scalars(statement).all())
 
     def get_by_id(self, ticket_id: int) -> Ticket | None:
         return self.db.get(Ticket, ticket_id)
@@ -61,16 +47,13 @@ class TicketRepository:
         self.db.refresh(ticket)
 
         return ticket
+
     def get_by_assignee_id(
         self,
         user_id: int,
     ) -> list[Ticket]:
         statement = (
-            select(Ticket)
-            .where(Ticket.assignee_id == user_id)
-            .order_by(Ticket.id)
+            select(Ticket).where(Ticket.assignee_id == user_id).order_by(Ticket.id)
         )
 
-        return list(
-            self.db.scalars(statement).all()
-        )
+        return list(self.db.scalars(statement).all())

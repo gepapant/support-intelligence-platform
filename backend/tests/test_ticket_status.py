@@ -46,9 +46,7 @@ def test_assigned_agent_can_start_ticket(
         json={
             "status": "in_progress",
         },
-        headers={
-            "Authorization": f"Bearer {token}"
-        },
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == 200
@@ -77,9 +75,7 @@ def test_open_ticket_cannot_be_closed_directly(
     )
 
     assert response.status_code == 409
-    assert response.json() == {
-        "detail": "Invalid ticket status transition"
-    }
+    assert response.json() == {"detail": "Invalid ticket status transition"}
 
 
 def test_unassigned_agent_cannot_change_status(
@@ -173,6 +169,7 @@ def test_closed_ticket_can_be_reopened(
     assert reopen_response.status_code == 200
     assert reopen_response.json()["status"] == "open"
 
+
 def test_agent_cannot_change_another_agents_ticket(
     admin_client,
 ):
@@ -204,9 +201,7 @@ def test_agent_cannot_change_another_agents_ticket(
         },
     )
 
-    other_token = login_response.json()[
-        "access_token"
-    ]
+    other_token = login_response.json()["access_token"]
 
     ticket_response = admin_client.post(
         "/tickets",
@@ -231,9 +226,7 @@ def test_agent_cannot_change_another_agents_ticket(
         json={
             "status": "in_progress",
         },
-        headers={
-            "Authorization": f"Bearer {other_token}"
-        },
+        headers={"Authorization": f"Bearer {other_token}"},
     )
 
     assert response.status_code == 403

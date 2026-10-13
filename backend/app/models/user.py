@@ -13,9 +13,7 @@ if TYPE_CHECKING:
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     email: Mapped[str] = mapped_column(
         String(320),
@@ -44,6 +42,4 @@ class User(Base):
         default=True,
     )
 
-    assigned_tickets: Mapped[list["Ticket"]] = relationship(
-        back_populates="assignee"
-    )
+    assigned_tickets: Mapped[list["Ticket"]] = relationship(back_populates="assignee")

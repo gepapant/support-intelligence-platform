@@ -26,22 +26,19 @@ class UserService:
 
         user = User(
             email=email,
-            hashed_password=hash_password(
-                user_data.password
-            ),
+            hashed_password=hash_password(user_data.password),
             role=UserRole.agent,
             is_active=True,
         )
 
         return self.repository.add(user)
+
     def authenticate_user(
         self,
         email: str,
         password: str,
     ) -> User | None:
-        user = self.repository.get_by_email(
-            email.lower()
-        )
+        user = self.repository.get_by_email(email.lower())
 
         if user is None:
             return None

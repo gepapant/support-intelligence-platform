@@ -3,11 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies.auth import require_admin
 from app.db.session import get_db
-from app.models.user import User
 from app.repositories.user import UserRepository
 from app.schemas.user import UserRead
 from app.services.user import UserService
-
 
 router = APIRouter(
     prefix="/admin",

@@ -14,9 +14,7 @@ def test_create_ticket(authenticated_client):
 
     assert data["id"] == 1
     assert data["title"] == "Password reset issue"
-    assert data["description"] == (
-        "Customer did not receive the reset email."
-    )
+    assert data["description"] == ("Customer did not receive the reset email.")
     assert data["priority"] == "high"
     assert data["status"] == "open"
 
@@ -46,9 +44,7 @@ def test_get_ticket(authenticated_client):
 
     ticket_id = create_response.json()["id"]
 
-    response = authenticated_client.get(
-        f"/tickets/{ticket_id}"
-    )
+    response = authenticated_client.get(f"/tickets/{ticket_id}")
 
     assert response.status_code == 200
 
@@ -59,14 +55,10 @@ def test_get_ticket(authenticated_client):
 
 
 def test_get_missing_ticket_returns_404(authenticated_client):
-    response = authenticated_client.get(
-        "/tickets/999999"
-    )
+    response = authenticated_client.get("/tickets/999999")
 
     assert response.status_code == 404
-    assert response.json() == {
-        "detail": "Ticket not found"
-    }
+    assert response.json() == {"detail": "Ticket not found"}
 
 
 def test_list_tickets(authenticated_client):
@@ -97,7 +89,6 @@ def test_list_tickets(authenticated_client):
     assert len(data) == 2
     assert data[0]["title"] == "First ticket"
     assert data[1]["title"] == "Second ticket"
-
 
 
 def test_update_ticket_priority(authenticated_client):
@@ -134,9 +125,7 @@ def test_update_missing_ticket_returns_404(
     )
 
     assert response.status_code == 404
-    assert response.json() == {
-        "detail": "Ticket not found"
-    }
+    assert response.json() == {"detail": "Ticket not found"}
 
 
 def test_update_ticket_rejects_empty_body(authenticated_client):
@@ -168,12 +157,11 @@ def test_tickets_require_authentication(client):
 def test_invalid_token_is_rejected(client):
     response = client.get(
         "/tickets",
-        headers={
-            "Authorization": "Bearer invalid-token"
-        },
+        headers={"Authorization": "Bearer invalid-token"},
     )
 
     assert response.status_code == 401
+
 
 def test_ticket_response_contains_timestamps(
     authenticated_client,
@@ -236,9 +224,7 @@ def test_filter_tickets_by_status(
 
     assert second_update.status_code == 200
 
-    response = admin_client.get(
-        "/tickets?status=closed"
-    )
+    response = admin_client.get("/tickets?status=closed")
 
     assert response.status_code == 200
 
@@ -247,6 +233,7 @@ def test_filter_tickets_by_status(
     assert len(data) == 1
     assert data[0]["title"] == "Closed ticket"
     assert data[0]["status"] == "closed"
+
 
 def test_filter_tickets_by_priority(
     authenticated_client,
@@ -269,9 +256,7 @@ def test_filter_tickets_by_priority(
         },
     )
 
-    response = authenticated_client.get(
-        "/tickets?priority=high"
-    )
+    response = authenticated_client.get("/tickets?priority=high")
 
     assert response.status_code == 200
 
@@ -297,9 +282,7 @@ def test_ticket_pagination(
 
         assert response.status_code == 201
 
-    response = authenticated_client.get(
-        "/tickets?limit=2&offset=2"
-    )
+    response = authenticated_client.get("/tickets?limit=2&offset=2")
 
     assert response.status_code == 200
 
@@ -313,8 +296,6 @@ def test_ticket_pagination(
 def test_ticket_pagination_rejects_invalid_limit(
     authenticated_client,
 ):
-    response = authenticated_client.get(
-        "/tickets?limit=500"
-    )
+    response = authenticated_client.get("/tickets?limit=500")
 
     assert response.status_code == 422
