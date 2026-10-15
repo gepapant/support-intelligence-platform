@@ -91,8 +91,8 @@ def test_list_tickets(authenticated_client):
     assert data[1]["title"] == "Second ticket"
 
 
-def test_update_ticket_priority(authenticated_client):
-    create_response = authenticated_client.post(
+def test_admin_can_update_ticket_priority(admin_client):
+    create_response = admin_client.post(
         "/tickets",
         json={
             "title": "Billing problem",
@@ -103,7 +103,7 @@ def test_update_ticket_priority(authenticated_client):
 
     ticket_id = create_response.json()["id"]
 
-    response = authenticated_client.patch(
+    response = admin_client.patch(
         f"/tickets/{ticket_id}",
         json={
             "priority": "high",
@@ -299,3 +299,89 @@ def test_ticket_pagination_rejects_invalid_limit(
     response = authenticated_client.get("/tickets?limit=500")
 
     assert response.status_code == 422
+
+
+def test_unassigned_agent_cannot_update_ticket(
+    authenticated_client,
+):
+    create_response = authenticated_client.post(
+        "/tickets",
+        json={
+            "title": "Protected ticket",
+            "description": "Agent should not edit this.",
+            "priority": "low",
+        },
+    )
+
+    ticket_id = create_response.json()["id"]
+
+    response = authenticated_client.patch(
+        f"/tickets/{ticket_id}",
+        json={
+            "priority": "high",
+        },
+    )
+
+    assert response.status_code == 403
+    assert response.json() == {"detail": "You cannot edit this ticket"}
+
+
+def test_assigned_agent_can_update_ticket(
+    admin_client,
+):
+    register_response = admin_client.post(
+        "/auth/register",
+        json={
+            "email": "editing-agent@example.com",
+            "password": "Password123!",
+        },
+    )
+
+    assert register_response.status_code == 201
+
+    agent_id = register_response.json()["id"]
+
+    login_response = admin_client.post(
+        "/auth/login",
+        json={
+            "email": "editing-agent@example.com",
+            "password": "Password123!",
+        },
+    )
+
+    assert login_response.status_code == 200
+
+    agent_token = login_response.json()["access_token"]
+
+    create_response = admin_client.post(
+        "/tickets",
+        json={
+            "title": "Assigned ticket",
+            "description": "Agent may edit this.",
+            "priority": "low",
+        },
+    )
+
+    ticket_id = create_response.json()["id"]
+
+    assign_response = admin_client.patch(
+        f"/tickets/{ticket_id}/assignment",
+        json={
+            "assignee_id": agent_id,
+        },
+    )
+
+    assert assign_response.status_code == 200
+
+    response = admin_client.patch(
+        f"/tickets/{ticket_id}",
+        headers={
+            "Authorization": f"Bearer {agent_token}",
+        },
+        json={
+            "priority": "high",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["priority"] == "high"

@@ -75,11 +75,19 @@ class TicketService:
         self,
         ticket_id: int,
         ticket_data: TicketUpdate,
-    ) -> Ticket | None:
+        current_user: User,
+    ) -> Ticket:
         ticket = self.repository.get_by_id(ticket_id)
 
         if ticket is None:
-            return None
+            raise TicketNotFoundError
+
+        is_admin = current_user.role == UserRole.admin
+
+        is_assignee = ticket.assignee_id == current_user.id
+
+        if not is_admin and not is_assignee:
+            raise TicketAccessDeniedError
 
         updates = ticket_data.model_dump(exclude_unset=True)
 
