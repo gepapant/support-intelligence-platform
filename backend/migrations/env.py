@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, pool
 
 from app.core.config import db_settings
 from app.db.base import Base
+from app.models.knowledge import KnowledgeArticle  # noqa: F401
 from app.models.ticket import Ticket  # noqa: F401
 from app.models.user import User  # noqa: F401
 
