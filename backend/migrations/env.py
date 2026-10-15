@@ -5,6 +5,8 @@ from sqlalchemy import create_engine, pool
 
 from app.core.config import db_settings
 from app.db.base import Base
+from app.models.ticket import Ticket  # noqa: F401
+from app.models.user import User  # noqa: F401
 
 # Alembic Config object
 config = context.config

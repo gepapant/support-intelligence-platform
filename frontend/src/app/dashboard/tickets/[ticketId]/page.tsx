@@ -14,6 +14,8 @@ import {
   getTicket,
 } from "@/lib/api";
 
+import TicketTriage from "@/components/tickets/ticket-triage";
+
 type TicketDetailPageProps = {
   params: Promise<{
     ticketId: string;
@@ -98,6 +100,13 @@ async function TicketDetailContent({
             <p className="mt-4 whitespace-pre-wrap text-slate-300">
               {ticket.description}
             </p>
+          </div>
+
+          <div className="mt-6">
+            <TicketTriage
+              ticket={ticket}
+              user={user}
+            />
           </div>
 
           <TicketActions

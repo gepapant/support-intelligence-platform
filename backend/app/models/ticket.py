@@ -57,7 +57,40 @@ class Ticket(Base):
         index=True,
     )
 
-    assignee: Mapped["User | None"] = relationship(back_populates="assigned_tickets")
+    assignee: Mapped["User | None"] = relationship(
+        back_populates="assigned_tickets",
+    )
+
+    ai_category: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+    )
+
+    ai_sentiment: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+    )
+
+    ai_suggested_priority: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+    )
+
+    ai_summary: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    ai_model: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    ai_analyzed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
