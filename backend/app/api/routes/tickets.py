@@ -127,20 +127,27 @@ def get_ticket(
 def update_ticket(
     ticket_id: int,
     ticket_data: TicketUpdate,
+    current_user: User = Depends(get_current_user),
     service: TicketService = Depends(get_ticket_service),
 ):
-    ticket = service.update_ticket(
-        ticket_id=ticket_id,
-        ticket_data=ticket_data,
-    )
+    try:
+        return service.update_ticket(
+            ticket_id=ticket_id,
+            ticket_data=ticket_data,
+            current_user=current_user,
+        )
 
-    if ticket is None:
+    except TicketNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Ticket not found",
         )
 
-    return ticket
+    except TicketAccessDeniedError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You cannot edit this ticket",
+        )
 
 
 @router.patch(
