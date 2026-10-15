@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 
@@ -40,5 +40,18 @@ class AuthSettings(BaseSettings):
     access_token_expire_minutes: int = 30
 
 
+class AISettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="AI_",
+        extra="ignore",
+    )
+
+    provider: str = "rule_based"
+    api_key: SecretStr | None = None
+    model: str = "gpt-6-luna"
+
+
 db_settings = DatabaseSettings()
 auth_settings = AuthSettings()
+ai_settings = AISettings()

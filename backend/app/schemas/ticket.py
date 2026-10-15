@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.domain.ticket import TicketPriority, TicketStatus
+from app.domain.triage import TicketCategory, TicketSentiment
 
 
 class TicketCreate(BaseModel):
@@ -37,6 +38,14 @@ class TicketRead(BaseModel):
     priority: TicketPriority
     status: TicketStatus
     assignee_id: int | None
+
+    ai_category: TicketCategory | None
+    ai_sentiment: TicketSentiment | None
+    ai_suggested_priority: TicketPriority | None
+    ai_summary: str | None
+    ai_model: str | None
+    ai_analyzed_at: datetime | None
+
     created_at: datetime
     updated_at: datetime
 

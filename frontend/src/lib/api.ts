@@ -22,6 +22,19 @@ export type TicketStatus =
   | "in_progress"
   | "closed";
 
+export type TicketCategory =
+  | "account"
+  | "billing"
+  | "technical"
+  | "refund"
+  | "feature_request"
+  | "other";
+
+export type TicketSentiment =
+  | "negative"
+  | "neutral"
+  | "positive";
+
 export type Ticket = {
   id: number;
   title: string;
@@ -29,6 +42,14 @@ export type Ticket = {
   priority: TicketPriority;
   status: TicketStatus;
   assignee_id: number | null;
+
+  ai_category: TicketCategory | null;
+  ai_sentiment: TicketSentiment | null;
+  ai_suggested_priority: TicketPriority | null;
+  ai_summary: string | null;
+  ai_model: string | null;
+  ai_analyzed_at: string | null;
+
   created_at: string;
   updated_at: string;
 };
