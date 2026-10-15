@@ -42,8 +42,6 @@ export type Ticket = {
   priority: TicketPriority;
   status: TicketStatus;
   assignee_id: number | null;
-  created_at: string;
-  updated_at: string; 
 
   ai_category: TicketCategory | null;
   ai_sentiment: TicketSentiment | null;
@@ -52,7 +50,8 @@ export type Ticket = {
   ai_model: string | null;
   ai_analyzed_at: string | null;
 
-  
+  created_at: string;
+  updated_at: string;
 };
 
 export type TicketFilters = {

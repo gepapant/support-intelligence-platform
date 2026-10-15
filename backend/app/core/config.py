@@ -40,10 +40,6 @@ class AuthSettings(BaseSettings):
     access_token_expire_minutes: int = 30
 
 
-db_settings = DatabaseSettings()
-auth_settings = AuthSettings()
-
-
 class AISettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -51,8 +47,6 @@ class AISettings(BaseSettings):
         extra="ignore",
     )
 
-    api_key: SecretStr | None = None
-    model: str = "gpt-6-luna"
     provider: str = "rule_based"
     api_key: SecretStr | None = None
     model: str = "gpt-6-luna"
