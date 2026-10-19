@@ -34,28 +34,16 @@ class ReplySuggestionReviewRequest(BaseModel):
     @model_validator(mode="after")
     def validate_review(self):
         if self.decision == ReplyDecision.pending:
-            raise ValueError(
-                "pending is not a review decision"
-            )
+            raise ValueError("pending is not a review decision")
 
         if self.decision == ReplyDecision.edited:
-            if (
-                self.final_reply is None
-                or not self.final_reply.strip()
-            ):
-                raise ValueError(
-                    "Edited replies require final_reply"
-                )
+            if self.final_reply is None or not self.final_reply.strip():
+                raise ValueError("Edited replies require final_reply")
 
-            self.final_reply = (
-                self.final_reply.strip()
-            )
+            self.final_reply = self.final_reply.strip()
 
         elif self.final_reply is not None:
-            raise ValueError(
-                "final_reply is only allowed "
-                "for edited replies"
-            )
+            raise ValueError("final_reply is only allowed for edited replies")
 
         return self
 

@@ -35,38 +35,26 @@ class RAGService:
         self.ticket_repository = ticket_repository
         self.search_service = search_service
         self.reply_provider = reply_provider
-        self.suggestion_repository = (
-            suggestion_repository
-        )
+        self.suggestion_repository = suggestion_repository
 
     def suggest_reply(
         self,
         ticket_id: int,
         current_user: User,
     ) -> SuggestedReplyResponse:
-        ticket = self.ticket_repository.get_by_id(
-            ticket_id
-        )
+        ticket = self.ticket_repository.get_by_id(ticket_id)
 
         if ticket is None:
             raise TicketNotFoundError
 
-        is_admin = (
-            current_user.role == UserRole.admin
-        )
+        is_admin = current_user.role == UserRole.admin
 
-        is_assignee = (
-            ticket.assignee_id
-            == current_user.id
-        )
+        is_assignee = ticket.assignee_id == current_user.id
 
         if not is_admin and not is_assignee:
             raise TicketAccessDeniedError
 
-        query = (
-            f"{ticket.title}\n"
-            f"{ticket.description}"
-        )
+        query = f"{ticket.title}\n{ticket.description}"
 
         retrieved = self.search_service.search(
             query=query,
@@ -95,9 +83,7 @@ class RAGService:
             generated_reply=reply,
             final_reply=None,
             decision=ReplyDecision.pending.value,
-            provider=(
-                self.reply_provider.provider_name
-            ),
+            provider=(self.reply_provider.provider_name),
             sources_snapshot=[
                 source.model_dump(
                     mode="json",
@@ -106,17 +92,11 @@ class RAGService:
             ],
         )
 
-        stored_suggestion = (
-            self.suggestion_repository.add(
-                suggestion
-            )
-        )
+        stored_suggestion = self.suggestion_repository.add(suggestion)
 
         return SuggestedReplyResponse(
             suggestion_id=stored_suggestion.id,
             reply=reply,
-            provider=(
-                self.reply_provider.provider_name
-            ),
+            provider=(self.reply_provider.provider_name),
             sources=sources,
         )
