@@ -203,3 +203,29 @@ export async function getAdminUsers(
 
   return response.json();
 }
+
+export type RAGSource = {
+  article_id: number;
+  article_title: string;
+  source_url: string | null;
+  similarity: number;
+};
+
+export type SuggestedReplyResponse = {
+  suggestion_id: number;
+  reply: string;
+  provider: string;
+  sources: RAGSource[];
+};
+
+export type ReplyDecision =
+  | "accepted"
+  | "edited"
+  | "rejected";
+
+export type ReplySuggestionReviewResponse = {
+  suggestion_id: number;
+  decision: ReplyDecision;
+  final_reply: string | null;
+  reviewed_at: string;
+};
