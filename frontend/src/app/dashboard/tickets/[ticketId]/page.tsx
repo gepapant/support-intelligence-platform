@@ -16,6 +16,8 @@ import {
 
 import TicketTriage from "@/components/tickets/ticket-triage";
 
+import TicketSuggestedReply from "@/components/tickets/ticket-suggested-reply";
+
 type TicketDetailPageProps = {
   params: Promise<{
     ticketId: string;
@@ -108,6 +110,11 @@ async function TicketDetailContent({
               user={user}
             />
           </div>
+
+          <TicketSuggestedReply
+            ticket={ticket}
+            user={user}
+          />
 
           <TicketActions
             ticket={ticket}
