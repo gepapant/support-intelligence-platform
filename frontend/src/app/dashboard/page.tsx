@@ -178,7 +178,18 @@ async function DashboardContent({
           </p>
         </div>
 
-        <LogoutButton />
+        <div className="flex flex-wrap gap-3">
+          {user.role === "admin" && (
+            <Link
+              href="/knowledge"
+              className="rounded-lg border border-emerald-800 px-4 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-950"
+            >
+              Knowledge Base
+            </Link>
+          )}
+
+          <LogoutButton />
+        </div>
       </header>
 
       <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
