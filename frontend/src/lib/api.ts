@@ -229,3 +229,41 @@ export type ReplySuggestionReviewResponse = {
   final_reply: string | null;
   reviewed_at: string;
 };
+
+export type KnowledgeArticle = {
+  id: number;
+  title: string;
+  content: string;
+  source_url: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function getKnowledgeArticles(
+  token: string,
+): Promise<KnowledgeArticle[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/knowledge`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to load knowledge articles: ${response.status}`,
+    );
+  }
+
+  return response.json();
+}
+
+export type KnowledgeIndexResponse = {
+  article_id: number;
+  chunks_indexed: number;
+  embedding_model: string;
+};

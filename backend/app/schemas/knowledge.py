@@ -64,3 +64,9 @@ class KnowledgeArticleRead(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+
+class KnowledgeIndexResponse(BaseModel):
+    article_id: int
+    chunks_indexed: int
+    embedding_model: str
