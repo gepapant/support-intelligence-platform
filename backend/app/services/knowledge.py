@@ -63,8 +63,8 @@ class KnowledgeService:
 
         if "content" in updates:
             article.indexing_status = KnowledgeIndexStatus.queued.value
-        article.indexing_error = None
-        article.indexed_at = None
+            article.indexing_error = None
+            article.indexed_at = None
 
         if "source_url" in updates:
             updates["source_url"] = (
