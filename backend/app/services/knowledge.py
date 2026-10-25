@@ -1,3 +1,6 @@
+from app.domain.knowledge import (
+    KnowledgeIndexStatus,
+)
 from app.models.knowledge import KnowledgeArticle
 from app.repositories.knowledge import (
     KnowledgeRepository,
@@ -57,6 +60,11 @@ class KnowledgeService:
         updates = data.model_dump(
             exclude_unset=True,
         )
+
+        if "content" in updates:
+            article.indexing_status = KnowledgeIndexStatus.queued.value
+            article.indexing_error = None
+            article.indexed_at = None
 
         if "source_url" in updates:
             updates["source_url"] = (

@@ -52,6 +52,18 @@ class AISettings(BaseSettings):
     model: str = "gpt-6-luna"
 
 
+class QueueSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="QUEUE_",
+        extra="ignore",
+    )
+
+    broker_url: str = "redis://localhost:6379/0"
+    result_backend: str = "redis://localhost:6379/1"
+
+
 db_settings = DatabaseSettings()
 auth_settings = AuthSettings()
 ai_settings = AISettings()
+queue_settings = QueueSettings()
