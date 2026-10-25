@@ -1,9 +1,18 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String, Text, func
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
+from app.domain.knowledge import (
+    KnowledgeIndexStatus,
+)
 
 
 class KnowledgeArticle(Base):
@@ -32,6 +41,23 @@ class KnowledgeArticle(Base):
         Boolean,
         nullable=False,
         default=True,
+    )
+
+    indexing_status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default=KnowledgeIndexStatus.queued.value,
+        server_default=KnowledgeIndexStatus.queued.value,
+    )
+
+    indexing_error: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    indexed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(

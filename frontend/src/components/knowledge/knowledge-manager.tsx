@@ -2,6 +2,7 @@
 
 import {
   FormEvent,
+  useEffect,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -52,6 +53,29 @@ export default function KnowledgeManager({
 
   const [reindexingId, setReindexingId] =
     useState<number | null>(null);
+
+  const hasIndexingWork = articles.some(
+    (article) =>
+      article.indexing_status === "queued" ||
+      article.indexing_status === "indexing",
+  );
+
+  useEffect(() => {
+    if (!hasIndexingWork) {
+      return;
+    }
+
+    const interval = window.setInterval(
+      () => {
+        router.refresh();
+      },
+      2000,
+    );
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [hasIndexingWork, router]);
 
   function clearFeedback() {
     setError(null);
@@ -110,7 +134,7 @@ export default function KnowledgeManager({
       setSourceUrl("");
 
       setMessage(
-        "Article created and indexed.",
+        "Article created and queued for indexing.",
       );
 
       router.refresh();
@@ -188,7 +212,7 @@ export default function KnowledgeManager({
       setEditingId(null);
 
       setMessage(
-        "Article updated successfully.",
+        "Article updated. Re-indexing queued.",
       );
 
       router.refresh();
@@ -286,6 +310,8 @@ export default function KnowledgeManager({
       setMessage(
         `Re-indexed ${result.chunks_indexed} chunk(s) using ${result.embedding_model}.`,
       );
+
+      router.refresh();
     } catch {
       setError(
         "Unable to connect to the indexing service",
@@ -306,8 +332,9 @@ export default function KnowledgeManager({
         </h2>
 
         <p className="mt-2 text-sm text-slate-400">
-          New content is automatically chunked
-          and indexed for RAG retrieval.
+          New content is automatically queued
+          for background indexing and RAG
+          retrieval.
         </p>
 
         <div className="mt-6 space-y-4">
@@ -507,11 +534,53 @@ export default function KnowledgeManager({
                                 ? "Active"
                                 : "Inactive"}
                             </span>
+
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                article.indexing_status ===
+                                "ready"
+                                  ? "bg-emerald-950 text-emerald-300"
+                                  : article.indexing_status ===
+                                      "failed"
+                                    ? "bg-red-950 text-red-300"
+                                    : article.indexing_status ===
+                                        "indexing"
+                                      ? "bg-blue-950 text-blue-300"
+                                      : "bg-amber-950 text-amber-300"
+                              }`}
+                            >
+                              Index:{" "}
+                              {
+                                article.indexing_status
+                              }
+                            </span>
                           </div>
 
                           <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-slate-300">
                             {article.content}
                           </p>
+
+                          {article.indexing_status ===
+                            "failed" &&
+                            article.indexing_error && (
+                              <div className="mt-4 rounded-lg border border-red-900 bg-red-950 p-3 text-sm text-red-300">
+                                Indexing failed:{" "}
+                                {
+                                  article.indexing_error
+                                }
+                              </div>
+                            )}
+
+                          {article.indexing_status ===
+                            "ready" &&
+                            article.indexed_at && (
+                              <p className="mt-3 text-xs text-slate-500">
+                                Indexed{" "}
+                                {new Date(
+                                  article.indexed_at,
+                                ).toLocaleString()}
+                              </p>
+                            )}
                         </div>
 
                         <span className="text-xs text-slate-500">

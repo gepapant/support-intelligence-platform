@@ -8,6 +8,10 @@ from pydantic import (
     model_validator,
 )
 
+from app.domain.knowledge import (
+    KnowledgeIndexStatus,
+)
+
 
 class KnowledgeArticleCreate(BaseModel):
     title: str = Field(
@@ -62,6 +66,9 @@ class KnowledgeArticleRead(BaseModel):
     content: str
     source_url: str | None
     is_active: bool
+    indexing_status: KnowledgeIndexStatus
+    indexing_error: str | None
+    indexed_at: datetime | None
     created_at: datetime
     updated_at: datetime
 

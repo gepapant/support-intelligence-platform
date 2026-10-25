@@ -230,12 +230,23 @@ export type ReplySuggestionReviewResponse = {
   reviewed_at: string;
 };
 
+export type KnowledgeIndexStatus =
+  | "queued"
+  | "indexing"
+  | "ready"
+  | "failed";
+
 export type KnowledgeArticle = {
   id: number;
   title: string;
   content: string;
   source_url: string | null;
   is_active: boolean;
+
+  indexing_status: KnowledgeIndexStatus;
+  indexing_error: string | null;
+  indexed_at: string | null;
+
   created_at: string;
   updated_at: string;
 };
