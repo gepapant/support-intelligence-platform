@@ -9,6 +9,7 @@ from app.repositories.knowledge_chunk import (
 )
 from app.services.knowledge_queue import (
     KnowledgeIndexDispatcher,
+    KnowledgeIndexDispatchError,
 )
 from app.worker.celery_app import celery_app
 from app.worker.tasks import (
@@ -83,7 +84,6 @@ def test_index_article_now(
     chunks = repository.get_by_article(article_id)
 
     assert len(chunks) == 1
-
     assert chunks[0].embedding is not None
 
     article = verification_db.get(
@@ -92,9 +92,7 @@ def test_index_article_now(
     )
 
     assert article is not None
-
     assert article.indexing_status == "ready"
-
     assert article.indexing_error is None
     assert article.indexed_at is not None
 
@@ -128,6 +126,29 @@ def test_dispatcher_enqueues_index_task(
 
     assert captured == [42]
     assert task_id == "job-123"
+
+
+def test_dispatcher_wraps_broker_failure(
+    monkeypatch,
+):
+    def fail_delay(
+        article_id: int,
+    ):
+        raise ConnectionError("Redis unavailable")
+
+    monkeypatch.setattr(
+        index_knowledge_article,
+        "delay",
+        fail_delay,
+    )
+
+    dispatcher = KnowledgeIndexDispatcher()
+
+    with pytest.raises(
+        KnowledgeIndexDispatchError,
+        match=("Unable to dispatch knowledge indexing task"),
+    ):
+        dispatcher.enqueue(42)
 
 
 def test_mark_index_queued(
@@ -313,7 +334,7 @@ def test_index_task_marks_failed_after_max_retries(
     try:
         with pytest.raises(
             RuntimeError,
-            match="Permanent embedding failure",
+            match=("Permanent embedding failure"),
         ):
             index_knowledge_article.run(42)
     finally:

@@ -1,10 +1,11 @@
 import pytest
 
-from app.repositories.knowledge_chunk import (
-    KnowledgeChunkRepository,
+from app.models.knowledge import (
+    KnowledgeArticle,
 )
 from app.services.knowledge_queue import (
     KnowledgeIndexDispatcher,
+    KnowledgeIndexDispatchError,
 )
 from tests.conftest import TestingSessionLocal
 
@@ -50,9 +51,11 @@ def test_admin_can_create_knowledge_article(
 
     assert data["title"] == "Refund policy"
     assert data["is_active"] is True
+
     assert data["source_url"] == ("https://example.com/help/refunds")
 
     assert data["indexing_status"] == "queued"
+
     assert data["indexing_error"] is None
     assert data["indexed_at"] is None
 
@@ -114,20 +117,15 @@ def test_missing_knowledge_article_returns_404(
     assert response.json() == {"detail": ("Knowledge article not found")}
 
 
-def test_admin_can_reindex_knowledge_article(
+def test_admin_can_queue_reindex(
     admin_client,
+    fake_knowledge_index_queue,
 ):
     create_response = admin_client.post(
         "/knowledge",
         json={
             "title": "Duplicate charges",
-            "content": (
-                "If a customer is charged "
-                "twice, verify both payments "
-                "and refund the duplicate "
-                "charge."
-            ),
-            "source_url": ("https://example.com/help/duplicate-charges"),
+            "content": ("Verify both payments and refund the duplicate charge."),
         },
     )
 
@@ -135,42 +133,20 @@ def test_admin_can_reindex_knowledge_article(
 
     article_id = create_response.json()["id"]
 
+    fake_knowledge_index_queue.clear()
+
     response = admin_client.post(f"/knowledge/{article_id}/reindex")
 
     assert response.status_code == 200
 
     data = response.json()
 
-    assert data["article_id"] == article_id
+    assert data["indexing_status"] == "queued"
 
-    assert data["chunks_indexed"] == 1
+    assert data["indexing_error"] is None
+    assert data["indexed_at"] is None
 
-    assert data["embedding_model"] == "hash-embedding-dev-v2"
-
-    article_response = admin_client.get(f"/knowledge/{article_id}")
-
-    assert article_response.status_code == 200
-
-    article_data = article_response.json()
-
-    assert article_data["indexing_status"] == "ready"
-
-    assert article_data["indexing_error"] is None
-
-    assert article_data["indexed_at"] is not None
-
-    db = TestingSessionLocal()
-
-    repository = KnowledgeChunkRepository(db)
-
-    chunks = repository.get_by_article(article_id)
-
-    assert len(chunks) == 1
-    assert chunks[0].embedding is not None
-
-    assert chunks[0].embedding_model == "hash-embedding-dev-v2"
-
-    db.close()
+    assert fake_knowledge_index_queue == [article_id]
 
 
 def test_reindex_missing_article_returns_404(
@@ -262,3 +238,177 @@ def test_metadata_update_does_not_queue_reindexing(
     assert update_response.status_code == 200
 
     assert fake_knowledge_index_queue == []
+
+
+def test_create_survives_queue_dispatch_failure(
+    admin_client,
+    monkeypatch,
+):
+    def fail_enqueue(
+        self,
+        article_id: int,
+    ) -> str:
+        raise KnowledgeIndexDispatchError("Unable to dispatch knowledge indexing task")
+
+    monkeypatch.setattr(
+        KnowledgeIndexDispatcher,
+        "enqueue",
+        fail_enqueue,
+    )
+
+    response = admin_client.post(
+        "/knowledge",
+        json={
+            "title": "Broker outage",
+            "content": ("This article should still be created."),
+        },
+    )
+
+    assert response.status_code == 201
+
+    data = response.json()
+
+    assert data["indexing_status"] == "failed"
+
+    assert data["indexing_error"] == ("Unable to dispatch knowledge indexing task")
+
+
+def test_content_update_survives_queue_dispatch_failure(
+    admin_client,
+    monkeypatch,
+):
+    create_response = admin_client.post(
+        "/knowledge",
+        json={
+            "title": "Existing article",
+            "content": "Original content.",
+        },
+    )
+
+    assert create_response.status_code == 201
+
+    article_id = create_response.json()["id"]
+
+    def fail_enqueue(
+        self,
+        article_id: int,
+    ) -> str:
+        raise KnowledgeIndexDispatchError("Unable to dispatch knowledge indexing task")
+
+    monkeypatch.setattr(
+        KnowledgeIndexDispatcher,
+        "enqueue",
+        fail_enqueue,
+    )
+
+    response = admin_client.patch(
+        f"/knowledge/{article_id}",
+        json={
+            "content": "Updated content.",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["content"] == "Updated content."
+
+    assert data["indexing_status"] == "failed"
+
+    assert data["indexing_error"] == ("Unable to dispatch knowledge indexing task")
+
+
+def test_failed_article_can_queue_reindex(
+    admin_client,
+    fake_knowledge_index_queue,
+):
+    create_response = admin_client.post(
+        "/knowledge",
+        json={
+            "title": "Retry article",
+            "content": ("Content requiring retry."),
+        },
+    )
+
+    assert create_response.status_code == 201
+
+    article_id = create_response.json()["id"]
+
+    db = TestingSessionLocal()
+
+    article = db.get(
+        KnowledgeArticle,
+        article_id,
+    )
+
+    assert article is not None
+
+    article.indexing_status = "failed"
+    article.indexing_error = "Previous broker failure"
+
+    db.commit()
+    db.close()
+
+    fake_knowledge_index_queue.clear()
+
+    response = admin_client.post(f"/knowledge/{article_id}/reindex")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["indexing_status"] == "queued"
+
+    assert data["indexing_error"] is None
+    assert data["indexed_at"] is None
+
+    assert fake_knowledge_index_queue == [article_id]
+
+
+def test_reindex_survives_broker_failure(
+    admin_client,
+    monkeypatch,
+):
+    create_response = admin_client.post(
+        "/knowledge",
+        json={
+            "title": "Reindex failure",
+            "content": "Existing article.",
+        },
+    )
+
+    assert create_response.status_code == 201
+
+    article_id = create_response.json()["id"]
+
+    def fail_enqueue(
+        self,
+        article_id: int,
+    ) -> str:
+        raise KnowledgeIndexDispatchError("Unable to dispatch knowledge indexing task")
+
+    monkeypatch.setattr(
+        KnowledgeIndexDispatcher,
+        "enqueue",
+        fail_enqueue,
+    )
+
+    response = admin_client.post(f"/knowledge/{article_id}/reindex")
+
+    assert response.status_code == 503
+
+    db = TestingSessionLocal()
+
+    article = db.get(
+        KnowledgeArticle,
+        article_id,
+    )
+
+    assert article is not None
+
+    assert article.indexing_status == "failed"
+
+    assert article.indexing_error == ("Unable to dispatch knowledge indexing task")
+
+    db.close()

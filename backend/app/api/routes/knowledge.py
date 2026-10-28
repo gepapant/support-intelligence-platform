@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 from fastapi import (
     APIRouter,
     Depends,
@@ -10,31 +8,21 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies.auth import require_admin
 from app.db.session import get_db
-from app.domain.knowledge import KnowledgeIndexStatus
-from app.integrations.hash_embedding import (
-    HashEmbeddingProvider,
-)
 from app.repositories.knowledge import (
     KnowledgeRepository,
-)
-from app.repositories.knowledge_chunk import (
-    KnowledgeChunkRepository,
 )
 from app.schemas.knowledge import (
     KnowledgeArticleCreate,
     KnowledgeArticleRead,
     KnowledgeArticleUpdate,
-    KnowledgeIndexResponse,
 )
 from app.services.knowledge import (
     KnowledgeArticleNotFoundError,
     KnowledgeService,
 )
-from app.services.knowledge_index import (
-    KnowledgeIndexService,
-)
 from app.services.knowledge_queue import (
     KnowledgeIndexDispatcher,
+    KnowledgeIndexDispatchError,
 )
 
 router = APIRouter(
@@ -54,16 +42,6 @@ def get_knowledge_service(
     return KnowledgeService(repository)
 
 
-def get_knowledge_index_service(
-    db: Session = Depends(get_db),
-) -> KnowledgeIndexService:
-    return KnowledgeIndexService(
-        article_repository=KnowledgeRepository(db),
-        chunk_repository=KnowledgeChunkRepository(db),
-        embedding_provider=HashEmbeddingProvider(),
-    )
-
-
 def get_knowledge_index_dispatcher() -> KnowledgeIndexDispatcher:
     return KnowledgeIndexDispatcher()
 
@@ -80,7 +58,14 @@ def create_article(
 ):
     article = service.create_article(article_data)
 
-    dispatcher.enqueue(article.id)
+    try:
+        dispatcher.enqueue(article.id)
+
+    except KnowledgeIndexDispatchError as exc:
+        article = service.mark_indexing_failed(
+            article.id,
+            str(exc),
+        )
 
     return article
 
@@ -130,7 +115,14 @@ def update_article(
         )
 
         if "content" in article_data.model_fields_set:
-            dispatcher.enqueue(article.id)
+            try:
+                dispatcher.enqueue(article.id)
+
+            except KnowledgeIndexDispatchError as exc:
+                article = service.mark_indexing_failed(
+                    article.id,
+                    str(exc),
+                )
 
         return article
 
@@ -143,46 +135,34 @@ def update_article(
 
 @router.post(
     "/{article_id}/reindex",
-    response_model=KnowledgeIndexResponse,
+    response_model=KnowledgeArticleRead,
 )
 def reindex_article(
     article_id: int,
-    service: KnowledgeIndexService = Depends(get_knowledge_index_service),
+    service: KnowledgeService = Depends(get_knowledge_service),
+    dispatcher: KnowledgeIndexDispatcher = Depends(get_knowledge_index_dispatcher),
 ):
-    article = service.article_repository.get_by_id(article_id)
+    try:
+        article = service.mark_indexing_queued(article_id)
 
-    if article is None:
+        try:
+            dispatcher.enqueue(article.id)
+
+        except KnowledgeIndexDispatchError as exc:
+            service.mark_indexing_failed(
+                article.id,
+                str(exc),
+            )
+
+            raise HTTPException(
+                status_code=(status.HTTP_503_SERVICE_UNAVAILABLE),
+                detail=str(exc),
+            )
+
+        return article
+
+    except KnowledgeArticleNotFoundError:
         raise HTTPException(
             status_code=(status.HTTP_404_NOT_FOUND),
             detail=("Knowledge article not found"),
         )
-
-    article.indexing_status = KnowledgeIndexStatus.indexing.value
-    article.indexing_error = None
-    article.indexed_at = None
-
-    service.article_repository.save(article)
-
-    try:
-        chunks = service.rebuild_article_chunks(article_id)
-
-    except Exception as exc:
-        article.indexing_status = KnowledgeIndexStatus.failed.value
-        article.indexing_error = str(exc)[:2000]
-        article.indexed_at = None
-
-        service.article_repository.save(article)
-
-        raise
-
-    article.indexing_status = KnowledgeIndexStatus.ready.value
-    article.indexing_error = None
-    article.indexed_at = datetime.now(timezone.utc)
-
-    service.article_repository.save(article)
-
-    return KnowledgeIndexResponse(
-        article_id=article_id,
-        chunks_indexed=len(chunks),
-        embedding_model=(service.embedding_provider.model_name),
-    )

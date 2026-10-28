@@ -79,3 +79,31 @@ class KnowledgeService:
             )
 
         return self.repository.save(article)
+
+    def mark_indexing_failed(
+        self,
+        article_id: int,
+        error_message: str,
+    ) -> KnowledgeArticle:
+        article = self.get_article(article_id)
+
+        article.indexing_status = KnowledgeIndexStatus.failed.value
+
+        article.indexing_error = error_message[:2000]
+
+        article.indexed_at = None
+
+        return self.repository.save(article)
+
+    def mark_indexing_queued(
+        self,
+        article_id: int,
+    ) -> KnowledgeArticle:
+        article = self.get_article(article_id)
+
+        article.indexing_status = KnowledgeIndexStatus.queued.value
+
+        article.indexing_error = None
+        article.indexed_at = None
+
+        return self.repository.save(article)

@@ -1,4 +1,10 @@
-from app.worker.tasks import index_knowledge_article
+from app.worker.tasks import (
+    index_knowledge_article,
+)
+
+
+class KnowledgeIndexDispatchError(Exception):
+    pass
 
 
 class KnowledgeIndexDispatcher:
@@ -6,6 +12,12 @@ class KnowledgeIndexDispatcher:
         self,
         article_id: int,
     ) -> str:
-        result = index_knowledge_article.delay(article_id)
+        try:
+            result = index_knowledge_article.delay(article_id)
+
+        except Exception as exc:
+            raise KnowledgeIndexDispatchError(
+                "Unable to dispatch knowledge indexing task"
+            ) from exc
 
         return result.id
