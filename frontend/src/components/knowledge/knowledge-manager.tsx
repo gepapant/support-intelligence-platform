@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 
 import type {
   KnowledgeArticle,
-  KnowledgeIndexResponse,
 } from "@/lib/api";
 
 type KnowledgeManagerProps = {
@@ -52,6 +51,9 @@ export default function KnowledgeManager({
     useState<number | null>(null);
 
   const [reindexingId, setReindexingId] =
+    useState<number | null>(null);
+
+  const [retryingId, setRetryingId] =
     useState<number | null>(null);
 
   const hasIndexingWork = articles.some(
@@ -133,9 +135,17 @@ export default function KnowledgeManager({
       setContent("");
       setSourceUrl("");
 
-      setMessage(
-        "Article created and queued for indexing.",
-      );
+      if (
+        data.indexing_status === "failed"
+      ) {
+        setMessage(
+          "Article created, but indexing could not be queued.",
+        );
+      } else {
+        setMessage(
+          "Article created and queued for indexing.",
+        );
+      }
 
       router.refresh();
     } catch {
@@ -211,9 +221,17 @@ export default function KnowledgeManager({
 
       setEditingId(null);
 
-      setMessage(
-        "Article updated. Re-indexing queued.",
-      );
+      if (
+        data.indexing_status === "failed"
+      ) {
+        setMessage(
+          "Article updated, but re-indexing could not be queued.",
+        );
+      } else {
+        setMessage(
+          "Article updated. Re-indexing queued.",
+        );
+      }
 
       router.refresh();
     } catch {
@@ -274,6 +292,45 @@ export default function KnowledgeManager({
     }
   }
 
+  async function retryIndexing(
+    articleId: number,
+  ) {
+    clearFeedback();
+
+    setRetryingId(articleId);
+
+    try {
+      const response = await fetch(
+        `/api/knowledge/${articleId}/reindex`,
+        {
+          method: "POST",
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          data.detail ??
+            "Unable to retry indexing",
+        );
+        return;
+      }
+
+      setMessage(
+        "Indexing retry queued.",
+      );
+
+      router.refresh();
+    } catch {
+      setError(
+        "Unable to connect to the indexing service",
+      );
+    } finally {
+      setRetryingId(null);
+    }
+  }
+
   async function reindexArticle(
     articleId: number,
   ) {
@@ -289,26 +346,18 @@ export default function KnowledgeManager({
         },
       );
 
-      const data =
-        (await response.json()) as
-          | KnowledgeIndexResponse
-          | { detail?: string };
+      const data = await response.json();
 
       if (!response.ok) {
         setError(
-          "detail" in data
-            ? data.detail ??
-                "Unable to re-index article"
-            : "Unable to re-index article",
+          data.detail ??
+            "Unable to re-index article",
         );
         return;
       }
 
-      const result =
-        data as KnowledgeIndexResponse;
-
       setMessage(
-        `Re-indexed ${result.chunks_indexed} chunk(s) using ${result.embedding_model}.`,
+        "Re-indexing queued.",
       );
 
       router.refresh();
@@ -619,6 +668,28 @@ export default function KnowledgeManager({
                             : "Activate"}
                         </button>
 
+                        {article.indexing_status ===
+                          "failed" && (
+                          <button
+                            type="button"
+                            disabled={
+                              retryingId ===
+                              article.id
+                            }
+                            onClick={() =>
+                              retryIndexing(
+                                article.id,
+                              )
+                            }
+                            className="rounded-lg border border-amber-700 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-950 disabled:opacity-60"
+                          >
+                            {retryingId ===
+                            article.id
+                              ? "Retrying..."
+                              : "Retry indexing"}
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           disabled={
@@ -634,7 +705,7 @@ export default function KnowledgeManager({
                         >
                           {reindexingId ===
                           article.id
-                            ? "Re-indexing..."
+                            ? "Queueing..."
                             : "Re-index"}
                         </button>
 
