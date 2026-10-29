@@ -1,5 +1,6 @@
 const API_BASE_URL =
-  process.env.API_BASE_URL ?? "http://127.0.0.1:8000";
+  process.env.API_BASE_URL ??
+  "http://127.0.0.1:8000";
 
 export type HealthResponse = {
   status: string;
@@ -119,7 +120,9 @@ export async function getTickets(
     );
   }
 
-  if (filters.assigneeId !== undefined) {
+  if (
+    filters.assigneeId !== undefined
+  ) {
     params.set(
       "assignee_id",
       String(filters.assigneeId),
@@ -278,3 +281,71 @@ export type KnowledgeIndexResponse = {
   chunks_indexed: number;
   embedding_model: string;
 };
+
+export type AnalyticsSummary = {
+  total_tickets: number;
+  unassigned_tickets: number;
+  ai_analyzed_tickets: number;
+  high_priority_active_tickets: number;
+  negative_active_tickets: number;
+
+  status_counts: Record<string, number>;
+  priority_counts: Record<string, number>;
+  category_counts: Record<string, number>;
+  sentiment_counts: Record<string, number>;
+};
+
+export type AnalyticsTrendPoint = {
+  date: string;
+  tickets_created: number;
+};
+
+export type AnalyticsTrends = {
+  days: number;
+  created_per_day: AnalyticsTrendPoint[];
+};
+
+export async function getAnalyticsSummary(
+  token: string,
+): Promise<AnalyticsSummary> {
+  const response = await fetch(
+    `${API_BASE_URL}/analytics/summary`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to load analytics summary: ${response.status}`,
+    );
+  }
+
+  return response.json();
+}
+
+export async function getAnalyticsTrends(
+  token: string,
+  days: 7 | 30,
+): Promise<AnalyticsTrends> {
+  const response = await fetch(
+    `${API_BASE_URL}/analytics/trends?days=${days}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to load analytics trends: ${response.status}`,
+    );
+  }
+
+  return response.json();
+}
