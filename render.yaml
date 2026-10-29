@@ -17,14 +17,17 @@ services:
     # dedicated Render Background Worker.
     startCommand: >
       bash -c '
-      uv run celery
-      -A app.worker.celery_app:celery_app
-      worker
-      --loglevel=INFO
-      --pool=solo &
-      exec uv run fastapi run
-      --host 0.0.0.0
-      --port $PORT
+      uv run python -m app.scripts.create_admin &&
+      {
+        uv run celery
+        -A app.worker.celery_app:celery_app
+        worker
+        --loglevel=INFO
+        --pool=solo &
+        exec uv run fastapi run
+        --host 0.0.0.0
+        --port $PORT;
+      }
       '
 
     initialDeployHook: >
