@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import LoginForm from "./login-form";
 
 export default function LoginPage() {
@@ -19,6 +21,16 @@ export default function LoginPage() {
         </div>
 
         <LoginForm />
+
+        <p className="mt-6 text-center text-sm text-slate-400">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/register"
+            className="font-semibold text-blue-400 transition hover:text-blue-300"
+          >
+            Create account
+          </Link>
+        </p>
       </div>
     </main>
   );
