@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import TicketCreate from "@/components/tickets/ticket-create";
 import TicketTable from "@/components/tickets/ticket-table";
 import {
   getCurrentUser,
@@ -78,7 +79,10 @@ function buildDashboardUrl({
   }
 
   if (page && page > 1) {
-    params.set("page", String(page));
+    params.set(
+      "page",
+      String(page),
+    );
   }
 
   const query = params.toString();
@@ -96,7 +100,9 @@ async function DashboardContent({
   const cookieStore = await cookies();
 
   const token =
-    cookieStore.get("access_token")?.value;
+    cookieStore.get(
+      "access_token",
+    )?.value;
 
   if (!token) {
     redirect("/login");
@@ -108,7 +114,9 @@ async function DashboardContent({
     redirect("/login");
   }
 
-  const status = parseStatus(params.status);
+  const status = parseStatus(
+    params.status,
+  );
 
   const priority = parsePriority(
     params.priority,
@@ -191,6 +199,8 @@ async function DashboardContent({
         </div>
 
         <div className="flex flex-wrap gap-3">
+          <TicketCreate />
+
           {user.role === "admin" && (
             <>
               <Link
