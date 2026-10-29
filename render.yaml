@@ -3,14 +3,21 @@ services:
     name: support-intelligence-api
     runtime: python
     plan: free
+    region: frankfurt
     rootDir: backend
 
-    buildCommand: uv sync --frozen
+    buildCommand: >
+      uv sync --frozen &&
+      uv run python -m app.scripts.prepare_database &&
+      uv run alembic upgrade head
 
     startCommand: >
       uv run fastapi run
       --host 0.0.0.0
       --port $PORT
+
+    initialDeployHook: >
+      uv run python -m app.scripts.create_admin
 
     healthCheckPath: /health
 
@@ -60,15 +67,17 @@ services:
         sync: false
 
   # IMPORTANT:
-  # Render Background Workers do not currently have a free plan.
-  # Creating this service will use paid compute.
+  # Render Background Workers do not currently
+  # have a free plan.
   #
-  # Uncomment only when you want the full async production deployment.
+  # Uncomment only when you want to run the
+  # full asynchronous production architecture.
   #
   # - type: worker
   #   name: support-intelligence-worker
   #   runtime: python
   #   plan: 0.5c-512mb
+  #   region: frankfurt
   #   rootDir: backend
   #
   #   buildCommand: uv sync --frozen
@@ -109,20 +118,18 @@ services:
   - type: keyvalue
     name: support-intelligence-queue
     plan: free
+    region: frankfurt
 
-    ipAllowList:
-      - source: 0.0.0.0/0
-        description: portfolio deployment
+    ipAllowList: []
 
     maxmemoryPolicy: noeviction
 
 databases:
   - name: support-intelligence-db
     plan: free
+    region: frankfurt
     postgresMajorVersion: "18"
 
     databaseName: support_intelligence
 
-    ipAllowList:
-      - source: 0.0.0.0/0
-        description: development and deployment access
+    ipAllowList: []
