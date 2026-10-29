@@ -53,9 +53,6 @@ export default function KnowledgeManager({
   const [reindexingId, setReindexingId] =
     useState<number | null>(null);
 
-  const [retryingId, setRetryingId] =
-    useState<number | null>(null);
-
   const hasIndexingWork = articles.some(
     (article) =>
       article.indexing_status === "queued" ||
@@ -292,45 +289,6 @@ export default function KnowledgeManager({
     }
   }
 
-  async function retryIndexing(
-    articleId: number,
-  ) {
-    clearFeedback();
-
-    setRetryingId(articleId);
-
-    try {
-      const response = await fetch(
-        `/api/knowledge/${articleId}/reindex`,
-        {
-          method: "POST",
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(
-          data.detail ??
-            "Unable to retry indexing",
-        );
-        return;
-      }
-
-      setMessage(
-        "Indexing retry queued.",
-      );
-
-      router.refresh();
-    } catch {
-      setError(
-        "Unable to connect to the indexing service",
-      );
-    } finally {
-      setRetryingId(null);
-    }
-  }
-
   async function reindexArticle(
     articleId: number,
   ) {
@@ -357,7 +315,7 @@ export default function KnowledgeManager({
       }
 
       setMessage(
-        "Re-indexing queued.",
+        "Indexing queued.",
       );
 
       router.refresh();
@@ -668,45 +626,35 @@ export default function KnowledgeManager({
                             : "Activate"}
                         </button>
 
-                        {article.indexing_status ===
-                          "failed" && (
-                          <button
-                            type="button"
-                            disabled={
-                              retryingId ===
-                              article.id
-                            }
-                            onClick={() =>
-                              retryIndexing(
-                                article.id,
-                              )
-                            }
-                            className="rounded-lg border border-amber-700 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-950 disabled:opacity-60"
-                          >
-                            {retryingId ===
-                            article.id
-                              ? "Retrying..."
-                              : "Retry indexing"}
-                          </button>
-                        )}
-
                         <button
                           type="button"
                           disabled={
                             reindexingId ===
-                            article.id
+                              article.id ||
+                            article.indexing_status ===
+                              "queued" ||
+                            article.indexing_status ===
+                              "indexing"
                           }
                           onClick={() =>
                             reindexArticle(
                               article.id,
                             )
                           }
-                          className="rounded-lg border border-emerald-800 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-950 disabled:opacity-60"
+                          className="rounded-lg border border-emerald-800 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-950 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {reindexingId ===
                           article.id
                             ? "Queueing..."
-                            : "Re-index"}
+                            : article.indexing_status ===
+                                "failed"
+                              ? "Retry indexing"
+                              : article.indexing_status ===
+                                    "queued" ||
+                                  article.indexing_status ===
+                                    "indexing"
+                                ? "Indexing..."
+                                : "Re-index"}
                         </button>
 
                         {article.source_url && (
