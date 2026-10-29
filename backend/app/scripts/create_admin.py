@@ -8,6 +8,7 @@ from app.core.security import (
 )
 from app.db.session import SessionLocal
 from app.domain.user import UserRole
+from app.models.ticket import Ticket  # noqa: F401
 from app.models.user import User
 from app.repositories.user import (
     UserRepository,
