@@ -109,14 +109,19 @@ async function DashboardContent({
   }
 
   const status = parseStatus(params.status);
+
   const priority = parsePriority(
     params.priority,
   );
 
   const view =
-    params.view === "mine" ? "mine" : "all";
+    params.view === "mine"
+      ? "mine"
+      : "all";
 
-  const parsedPage = Number(params.page);
+  const parsedPage = Number(
+    params.page,
+  );
 
   const page =
     Number.isInteger(parsedPage) &&
@@ -126,16 +131,20 @@ async function DashboardContent({
 
   const pageSize = 10;
 
-  const results = await getTickets(token, {
-    status,
-    priority,
-    assigneeId:
-      view === "mine"
-        ? user.id
-        : undefined,
-    limit: pageSize + 1,
-    offset: (page - 1) * pageSize,
-  });
+  const results = await getTickets(
+    token,
+    {
+      status,
+      priority,
+      assigneeId:
+        view === "mine"
+          ? user.id
+          : undefined,
+      limit: pageSize + 1,
+      offset:
+        (page - 1) * pageSize,
+    },
+  );
 
   const hasNextPage =
     results.length > pageSize;
@@ -145,21 +154,24 @@ async function DashboardContent({
     pageSize,
   );
 
-  const openTickets = tickets.filter(
-    (ticket) =>
-      ticket.status === "open",
-  ).length;
+  const openTickets =
+    tickets.filter(
+      (ticket) =>
+        ticket.status === "open",
+    ).length;
 
   const inProgressTickets =
     tickets.filter(
       (ticket) =>
-        ticket.status === "in_progress",
+        ticket.status ===
+        "in_progress",
     ).length;
 
-  const closedTickets = tickets.filter(
-    (ticket) =>
-      ticket.status === "closed",
-  ).length;
+  const closedTickets =
+    tickets.filter(
+      (ticket) =>
+        ticket.status === "closed",
+    ).length;
 
   return (
     <>
@@ -180,12 +192,21 @@ async function DashboardContent({
 
         <div className="flex flex-wrap gap-3">
           {user.role === "admin" && (
-            <Link
-              href="/knowledge"
-              className="rounded-lg border border-emerald-800 px-4 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-950"
-            >
-              Knowledge Base
-            </Link>
+            <>
+              <Link
+                href="/analytics"
+                className="rounded-lg border border-blue-800 px-4 py-2 text-sm font-semibold text-blue-300 transition hover:bg-blue-950"
+              >
+                Analytics
+              </Link>
+
+              <Link
+                href="/knowledge"
+                className="rounded-lg border border-emerald-800 px-4 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-950"
+              >
+                Knowledge Base
+              </Link>
+            </>
           )}
 
           <LogoutButton />
@@ -292,18 +313,23 @@ async function DashboardContent({
               <select
                 id="status"
                 name="status"
-                defaultValue={status ?? ""}
+                defaultValue={
+                  status ?? ""
+                }
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
               >
                 <option value="">
                   All statuses
                 </option>
+
                 <option value="open">
                   Open
                 </option>
+
                 <option value="in_progress">
                   In progress
                 </option>
+
                 <option value="closed">
                   Closed
                 </option>
@@ -321,18 +347,23 @@ async function DashboardContent({
               <select
                 id="priority"
                 name="priority"
-                defaultValue={priority ?? ""}
+                defaultValue={
+                  priority ?? ""
+                }
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
               >
                 <option value="">
                   All priorities
                 </option>
+
                 <option value="low">
                   Low
                 </option>
+
                 <option value="medium">
                   Medium
                 </option>
+
                 <option value="high">
                   High
                 </option>
@@ -359,7 +390,9 @@ async function DashboardContent({
           </form>
         </div>
 
-        <TicketTable tickets={tickets} />
+        <TicketTable
+          tickets={tickets}
+        />
 
         <div className="mt-6 flex items-center justify-between">
           <div>
@@ -418,10 +451,14 @@ export default function DashboardPage({
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-slate-100">
       <div className="mx-auto max-w-7xl">
         <Suspense
-          fallback={<DashboardFallback />}
+          fallback={
+            <DashboardFallback />
+          }
         >
           <DashboardContent
-            searchParams={searchParams}
+            searchParams={
+              searchParams
+            }
           />
         </Suspense>
       </div>
