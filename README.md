@@ -1,8 +1,8 @@
 # Support Intelligence Platform
 
-A production-style full-stack customer support platform combining ticket operations, role-based workflows, AI-assisted triage, retrieval-augmented support assistance, asynchronous knowledge indexing, human review, and operational analytics.
+A production-style full-stack customer support platform combining ticket operations, role-based workflows, AI-assisted triage, knowledge retrieval, human-reviewed reply assistance, operational analytics, and resilient backend architecture.
 
-The project was built as a software engineering portfolio application with a focus on backend architecture, reliability, testing, asynchronous processing, AI integration patterns, and a modern TypeScript frontend.
+Built as a software engineering portfolio project with a focus on backend design, authentication and authorization, testing, AI integration patterns, asynchronous processing, database architecture, and a modern TypeScript frontend.
 
 ---
 
@@ -12,7 +12,11 @@ The project was built as a software engineering portfolio application with a foc
 - **API Documentation:** https://support-intelligence-api-s5jr.onrender.com/docs
 - **Source Code:** https://github.com/gepapant/support-intelligence-platform
 
-The public demo is deployed with Next.js on Vercel and FastAPI/PostgreSQL on Render.
+The public demo uses:
+
+- Next.js on Vercel
+- FastAPI on Render
+- PostgreSQL on Render
 
 > The backend runs on free-tier infrastructure, so the first request after inactivity may require a cold start.
 
@@ -22,76 +26,69 @@ The public demo is deployed with Next.js on Vercel and FastAPI/PostgreSQL on Ren
 
 ### Ticket Workspace
 
-![Ticket Workspace](docs/screenshots/dashboard.png)
+![Ticket Workspace](docs/dashboard.png)
 
 ### AI-Assisted Ticket Triage
 
-![AI-Assisted Ticket Triage](docs/screenshots/ai-triage.png)
+![AI-Assisted Ticket Triage](docs/ai-triage.png)
 
 ### Analytics Dashboard
 
-![Analytics Dashboard](docs/screenshots/analytics.png)
+![Analytics Dashboard](docs/analytics.png)
 
 ### Landing Page
 
-![Support Intelligence Platform](docs/screenshots/landing.png)
+![Support Intelligence Platform](docs/landing.png)
 
 ---
 
 ## Overview
 
-Support Intelligence Platform models a real customer-support workflow.
+Support Intelligence Platform models a realistic customer-support workflow.
 
-Support agents and administrators can manage tickets, assign work, move tickets through workflow states, analyze support requests, retrieve relevant internal knowledge, generate grounded reply suggestions, review AI-assisted responses, and monitor operational analytics.
+Users can create accounts and authenticate securely, while support agents and administrators can work with tickets through role-based workflows.
 
-The platform includes:
+The platform supports:
 
-- Ticket creation and management
+- User registration and authentication
 - Agent and admin roles
-- JWT authentication
+- JWT-based authentication
 - Role-based access control
+- Ticket creation and management
 - Ticket assignment
 - Ticket status workflows
 - Filtering and pagination
 - AI-assisted ticket triage
 - Knowledge Base management
-- Vector-based knowledge retrieval
+- Vector-oriented retrieval architecture
 - RAG-style reply assistance
-- Human review and audit trail
-- Asynchronous knowledge indexing
+- Human review and audit workflow
+- Knowledge indexing
 - Queue failure recovery
-- Support analytics dashboard
+- Operational analytics
 - Backend and frontend CI
 
 ---
 
-## Main Features
+# Main Features
 
-### Ticket Operations
+## Authentication and Registration
 
-Tickets support:
+Users can create an account directly through the frontend.
 
-- priorities
-- workflow status
-- assignment to agents
-- filtering
-- pagination
-- role-based editing
-- access control
-
-Workflow states:
+New registrations are created with the:
 
 ```text
-open → in_progress → closed
+agent
 ```
 
-Administrators can assign tickets to agents, while agents can work with tickets assigned to them.
+role.
 
----
+Administrators are created separately through the production bootstrap process.
 
-### Authentication and RBAC
+Authentication uses JWT access tokens.
 
-The backend uses JWT-based authentication.
+The Next.js frontend stores authentication state using an HttpOnly cookie, keeping the access token inaccessible to normal client-side JavaScript.
 
 Supported roles:
 
@@ -100,31 +97,76 @@ agent
 admin
 ```
 
-Role-based permissions protect administrative operations such as:
+Administrative capabilities are protected through role-based access control.
 
-- user listing
+Admin-only functionality includes:
+
 - Knowledge Base management
-- analytics
-- ticket assignment
+- Analytics
+- User listing
+- Ticket assignment
 
 ---
 
-### AI-Assisted Ticket Triage
+## Ticket Operations
 
-Tickets can be analyzed for:
+Users can create support tickets directly from the Ticket Workspace.
 
-- support category
+Each ticket includes:
+
+- title
+- description
+- priority
+- status
+- assignee
+- AI triage metadata
+- creation and update timestamps
+
+Supported priorities:
+
+```text
+low
+medium
+high
+```
+
+Supported workflow states:
+
+```text
+open
+  ↓
+in_progress
+  ↓
+closed
+```
+
+Tickets also support:
+
+- filtering
+- pagination
+- assignment
+- role-based editing
+- workflow validation
+- access control
+
+Administrators can assign tickets to agents.
+
+Agents can work with tickets according to the application's permission model.
+
+---
+
+## AI-Assisted Ticket Triage
+
+Tickets can be analyzed to produce structured support metadata.
+
+The triage workflow determines:
+
+- category
 - customer sentiment
 - suggested priority
-- concise summary
+- concise issue summary
 
-The triage layer uses a provider abstraction.
-
-Development can run without external AI services using the built-in rule-based provider.
-
-An OpenAI provider is also implemented using the Responses API and structured Pydantic output.
-
-Example triage result:
+Example:
 
 ```json
 {
@@ -135,13 +177,37 @@ Example triage result:
 }
 ```
 
+The implementation uses a provider abstraction.
+
+This allows the application to switch between different AI implementations without rewriting the ticket business logic.
+
+The default development and public-demo configuration uses:
+
+```text
+rule_based
+```
+
+which provides deterministic triage without requiring a paid external AI API.
+
+An OpenAI-backed triage provider is also implemented behind the same abstraction.
+
 ---
 
 ## Knowledge Base
 
-Administrators can create and manage Knowledge Base articles.
+Administrators can create and manage internal Knowledge Base articles.
 
-Each article tracks its indexing lifecycle:
+Articles contain:
+
+- title
+- content
+- optional source URL
+- active/inactive state
+- indexing status
+- indexing error information
+- indexing timestamp
+
+The indexing lifecycle is modeled explicitly:
 
 ```text
 queued
@@ -151,29 +217,35 @@ indexing
 ready
 ```
 
-Failures are explicitly stored:
+Failures are stored as:
 
 ```text
 failed
 ```
 
-Failed indexing jobs can be retried from the UI.
+This makes indexing state visible instead of hiding infrastructure failures.
 
-Article content changes automatically trigger re-indexing.
+Articles can also be:
+
+- edited
+- activated
+- deactivated
+- re-indexed
+
+Content changes automatically trigger another indexing attempt.
 
 ---
 
-## Asynchronous Indexing
+## Knowledge Indexing Architecture
 
-Knowledge indexing runs outside the HTTP request cycle using:
+The project includes an asynchronous Knowledge Base indexing architecture based on:
 
 - Celery
-- Redis-compatible queue
-- background worker
+- Redis-compatible queues
+- PostgreSQL
+- pgvector
 
-This keeps API requests responsive while potentially expensive indexing work happens asynchronously.
-
-The queue workflow is:
+The full asynchronous workflow is:
 
 ```text
 Article create/update
@@ -191,15 +263,36 @@ Article create/update
  Background worker
         │
         ▼
- Chunk + embed article
+ Chunk article
         │
         ▼
-     pgvector
+ Generate embeddings
+        │
+        ▼
+ PostgreSQL + pgvector
 ```
 
-Queue failures are handled explicitly.
+The indexing dispatcher supports configurable execution modes.
 
-If the broker is unavailable after the article has already been persisted, the API does not incorrectly behave as though article creation itself failed.
+The standard local architecture uses asynchronous processing:
+
+```text
+KNOWLEDGE_INDEX_MODE=async
+```
+
+For constrained environments, the dispatcher also supports:
+
+```text
+KNOWLEDGE_INDEX_MODE=sync
+```
+
+This allows indexing to execute inside the API process when a dedicated background worker is unavailable.
+
+### Queue Resilience
+
+Queue dispatch failures are handled explicitly.
+
+If an article is successfully stored but the indexing job cannot be dispatched, the application does not incorrectly report that article creation failed.
 
 Instead:
 
@@ -210,16 +303,18 @@ dispatch failure
       ↓
 indexing_status = failed
       ↓
-user can retry
+failure stored in PostgreSQL
 ```
+
+This allows the system to preserve user data and expose a recoverable failure state.
 
 ---
 
 ## Retrieval and RAG Workflow
 
-Knowledge articles are split into searchable chunks and stored with vector representations.
+Knowledge Base articles can be split into searchable chunks and represented using vectors.
 
-The retrieval pipeline uses cosine similarity to find relevant Knowledge Base content for a support ticket.
+The retrieval pipeline is designed around cosine similarity search using PostgreSQL and pgvector.
 
 ```text
 Ticket
@@ -240,16 +335,16 @@ Relevant knowledge chunks
 Reply provider
   │
   ▼
-Suggested response
+Suggested reply
 ```
 
-The current development configuration uses:
+The development configuration includes deterministic providers:
 
 ```text
 hash-embedding-dev-v2
 ```
 
-for deterministic local embeddings and:
+for local embeddings and:
 
 ```text
 template-rag-dev-v1
@@ -257,17 +352,17 @@ template-rag-dev-v1
 
 for deterministic reply generation.
 
-These providers make the complete RAG workflow testable without requiring paid external AI APIs.
+These implementations make the RAG workflow testable without requiring paid external AI services.
 
-The architecture allows production embedding and LLM providers to replace these development implementations later.
+The architecture allows external embedding and generative AI providers to replace the development implementations later.
 
 ---
 
-## Human Review
+## Human-in-the-Loop AI
 
-Generated support replies are not automatically treated as final responses.
+Generated reply suggestions are not automatically sent or treated as final customer responses.
 
-A support agent can:
+A support user can review a suggestion and:
 
 ```text
 accept
@@ -275,11 +370,18 @@ edit
 reject
 ```
 
-a generated suggestion.
+The platform records:
 
-The platform stores the decision and final response, preserving a human-review audit trail.
+- generated response
+- final response
+- decision
+- reviewing user
+- review timestamp
+- retrieved knowledge sources
 
-This models a human-in-the-loop AI workflow instead of allowing autonomous AI output to directly become a customer response.
+This creates a human-review audit trail around AI-assisted output.
+
+The design intentionally keeps a human in control of the final support response.
 
 ---
 
@@ -287,7 +389,7 @@ This models a human-in-the-loop AI workflow instead of allowing autonomous AI ou
 
 Administrators have access to operational support analytics.
 
-Current KPIs include:
+Current KPI cards include:
 
 - total tickets
 - unassigned tickets
@@ -295,7 +397,7 @@ Current KPIs include:
 - high-priority active tickets
 - negative-sentiment active tickets
 
-The dashboard also includes distributions for:
+The dashboard also visualizes distributions for:
 
 - ticket status
 - ticket priority
@@ -309,19 +411,19 @@ Ticket creation trends are available for:
 30 days
 ```
 
-Analytics are aggregated directly in SQL instead of loading all tickets into application memory.
+The analytics layer performs aggregation in PostgreSQL rather than loading every ticket into application memory.
 
-The frontend visualizes analytics using Recharts.
+The frontend visualizes results using Recharts.
 
 ---
 
-## Architecture
+# Architecture
 
 ```mermaid
 flowchart LR
     User[Browser]
 
-    User --> Next[Next.js 16 Frontend]
+    User --> Next[Next.js Frontend]
 
     Next --> API[FastAPI Backend]
 
@@ -331,17 +433,21 @@ flowchart LR
     API --> Triage[AI Triage Provider]
     API --> RAG[RAG Service]
 
-    Tickets --> DB[(PostgreSQL)]
+    Auth --> DB[(PostgreSQL)]
+    Tickets --> DB
     Analytics --> DB
-    Auth --> DB
 
     RAG --> Vector[(PostgreSQL + pgvector)]
 
-    API --> Queue[Celery Queue]
+    API --> Queue[Knowledge Index Dispatcher]
 
-    Queue --> KV[Redis-compatible Broker]
-    KV --> Worker[Celery Worker]
+    Queue --> Sync[Sync Mode]
+    Queue --> Celery[Celery]
 
+    Celery --> Redis[Redis-compatible Broker]
+    Redis --> Worker[Background Worker]
+
+    Sync --> Vector
     Worker --> Vector
 
     Triage --> Rule[Rule-based Provider]
@@ -350,9 +456,9 @@ flowchart LR
 
 ---
 
-## Technology Stack
+# Technology Stack
 
-### Backend
+## Backend
 
 - Python 3.14
 - FastAPI
@@ -371,7 +477,7 @@ flowchart LR
 - Ruff
 - uv
 
-### Frontend
+## Frontend
 
 - Next.js 16
 - React 19
@@ -379,24 +485,29 @@ flowchart LR
 - Tailwind CSS
 - Recharts
 - Server Components
+- Client Components
 - Next.js Route Handlers
 
-### Engineering
+## Engineering
 
 - Git
 - GitHub
 - GitHub Actions
 - REST APIs
-- async job processing
+- JWT authentication
+- role-based authorization
 - repository/service architecture
 - provider abstractions
 - dependency injection
+- async job processing
+- database migrations
 - automated testing
 - CI pipelines
+- production deployment
 
 ---
 
-## Repository Structure
+# Repository Structure
 
 ```text
 support-intelligence-platform/
@@ -430,9 +541,16 @@ support-intelligence-platform/
 │   ├── package.json
 │   └── package-lock.json
 │
+├── docs/
+│   ├── landing.png
+│   ├── dashboard.png
+│   ├── ai-triage.png
+│   └── analytics.png
+│
 ├── .github/
 │   └── workflows/
 │
+├── render.yaml
 └── README.md
 ```
 
@@ -449,13 +567,13 @@ Install:
 - PostgreSQL
 - Node.js
 - npm
-- Redis or another Redis-compatible server
+- Redis or another Redis-compatible service
 
 On Windows, Memurai can be used as a Redis-compatible local broker.
 
 ---
 
-## 1. Clone the repository
+## 1. Clone the Repository
 
 ```bash
 git clone https://github.com/gepapant/support-intelligence-platform.git
@@ -465,7 +583,7 @@ cd support-intelligence-platform
 
 ---
 
-## 2. PostgreSQL
+## 2. PostgreSQL Setup
 
 Create a PostgreSQL database and application user.
 
@@ -484,7 +602,7 @@ TO support_app;
 
 The project uses pgvector.
 
-Before running the embedding migration on a new database, enable the extension:
+Enable the extension before applying the vector migration:
 
 ```sql
 CREATE EXTENSION vector;
@@ -500,7 +618,9 @@ Move into the backend:
 cd backend
 ```
 
-Copy the example environment file:
+Create the environment file.
+
+Linux/macOS:
 
 ```bash
 cp .env.example .env
@@ -512,7 +632,7 @@ PowerShell:
 Copy-Item .env.example .env
 ```
 
-Example configuration:
+Example local configuration:
 
 ```env
 DB_HOST=localhost
@@ -531,6 +651,8 @@ AI_MODEL=gpt-6-luna
 
 QUEUE_BROKER_URL=redis://localhost:6379/0
 QUEUE_RESULT_BACKEND=redis://localhost:6379/1
+
+KNOWLEDGE_INDEX_MODE=async
 ```
 
 Do not commit `.env`.
@@ -545,7 +667,15 @@ uv sync
 
 ---
 
-## 5. Run Database Migrations
+## 5. Prepare the Database
+
+Enable required PostgreSQL extensions:
+
+```bash
+uv run python -m app.scripts.prepare_database
+```
+
+Then apply migrations:
 
 ```bash
 uv run alembic upgrade head
@@ -559,7 +689,7 @@ uv run alembic upgrade head
 uv run fastapi dev
 ```
 
-The local API will normally be available at:
+The API will normally be available at:
 
 ```text
 http://127.0.0.1:8000
@@ -575,9 +705,9 @@ http://127.0.0.1:8000/docs
 
 ## 7. Start the Queue Broker
 
-Start Redis or your Redis-compatible server.
+Start Redis, Memurai, or another Redis-compatible broker.
 
-Local default:
+Default:
 
 ```text
 redis://localhost:6379
@@ -601,7 +731,28 @@ uv run celery -A app.worker.celery_app:celery_app worker --loglevel=INFO
 
 ---
 
-## 9. Frontend
+## 9. Create an Admin Account
+
+Set:
+
+```env
+BOOTSTRAP_ADMIN_EMAIL=admin@example.com
+BOOTSTRAP_ADMIN_PASSWORD=replace-with-a-secure-password
+```
+
+Then run:
+
+```bash
+uv run python -m app.scripts.create_admin
+```
+
+The script is idempotent.
+
+If the account already exists, it is updated and promoted to the admin role.
+
+---
+
+## 10. Frontend
 
 Open another terminal:
 
@@ -615,7 +766,9 @@ Install dependencies:
 npm install
 ```
 
-Copy the environment configuration:
+Create the local environment configuration.
+
+Linux/macOS:
 
 ```bash
 cp .env.example .env.local
@@ -627,13 +780,13 @@ PowerShell:
 Copy-Item .env.example .env.local
 ```
 
-Local configuration:
+Set:
 
 ```env
 API_BASE_URL=http://127.0.0.1:8000
 ```
 
-Start Next.js:
+Run:
 
 ```bash
 npm run dev
@@ -688,29 +841,31 @@ npm run lint
 npm run build
 ```
 
+The production build is also validated in CI.
+
 ---
 
-# CI
+# Continuous Integration
 
-GitHub Actions runs independent CI pipelines for both applications.
+GitHub Actions runs independent pipelines for the backend and frontend.
 
-### Backend CI
-
-Validates:
-
-- Python dependencies
-- Ruff
-- backend tests
-
-### Frontend CI
+## Backend CI
 
 Validates:
 
-- npm dependencies
+- Python dependency installation
+- Ruff linting
+- backend test suite
+
+## Frontend CI
+
+Validates:
+
+- npm dependency installation
 - ESLint
 - Next.js production build
 
-This allows pull requests to be checked before merge.
+Pull requests are validated before merge.
 
 ---
 
@@ -726,28 +881,45 @@ Important endpoint groups include:
 /analytics
 ```
 
-Examples:
+Authentication:
 
 ```text
 POST   /auth/register
 POST   /auth/login
 GET    /auth/me
+```
 
+Tickets:
+
+```text
 POST   /tickets
 GET    /tickets
 GET    /tickets/{id}
 PATCH  /tickets/{id}
 PATCH  /tickets/{id}/assignment
 PATCH  /tickets/{id}/status
+```
 
+AI assistance:
+
+```text
 POST   /tickets/{id}/triage
 POST   /tickets/{id}/suggested-reply
+```
 
+Knowledge Base:
+
+```text
 GET    /knowledge
 POST   /knowledge
+GET    /knowledge/{id}
 PATCH  /knowledge/{id}
 POST   /knowledge/{id}/reindex
+```
 
+Analytics:
+
+```text
 GET    /analytics/summary
 GET    /analytics/trends?days=7
 GET    /analytics/trends?days=30
@@ -757,59 +929,59 @@ GET    /analytics/trends?days=30
 
 # Production Deployment Architecture
 
-A suitable deployment topology is:
+A full production-style topology can separate the web API and background processing services:
 
 ```text
 Vercel
   │
-  └── Next.js frontend
-          │
-          ▼
+  ▼
+Next.js Frontend
+  │
+  ▼
 Render Web Service
   │
-  └── FastAPI
-        │
-        ├── PostgreSQL + pgvector
-        │
-        └── Redis-compatible queue
-                │
-                ▼
-          Render Background Worker
-                │
-                └── Celery
+  ▼
+FastAPI
+  │
+  ├──────────────► PostgreSQL + pgvector
+  │
+  └──────────────► Redis-compatible Broker
+                         │
+                         ▼
+                  Background Worker
+                         │
+                         ▼
+                       Celery
+                         │
+                         ▼
+                  PostgreSQL + pgvector
 ```
 
-Recommended separation:
-
-### Frontend
+## Frontend
 
 ```text
 Vercel
 Root Directory: frontend
 ```
 
-Production environment variable:
+Environment:
 
 ```env
 API_BASE_URL=https://your-backend.example.com
 ```
 
-### Backend Web Service
+## Backend Web Service
 
 ```text
 Render
 Root Directory: backend
 ```
 
-Build:
+Typical build:
 
 ```bash
 uv sync --frozen
-```
-
-Pre-deploy:
-
-```bash
+uv run python -m app.scripts.prepare_database
 uv run alembic upgrade head
 ```
 
@@ -819,42 +991,69 @@ Start:
 uv run fastapi run --host 0.0.0.0 --port $PORT
 ```
 
-### Celery Worker
+## Celery Worker
 
-Use the same backend codebase and environment configuration.
-
-Start command:
+The same backend codebase can run as a separate worker:
 
 ```bash
 uv run celery -A app.worker.celery_app:celery_app worker --loglevel=INFO
 ```
 
-### Queue
+The API and worker must share:
 
-Use a Redis-compatible service.
+- database configuration
+- Redis-compatible broker
+- result backend
 
-The web service and worker must use the same broker URL.
+---
 
-```env
-QUEUE_BROKER_URL=...
-QUEUE_RESULT_BACKEND=...
+# Current Hosted Demo
+
+The public portfolio deployment currently uses:
+
+```text
+Browser
+   │
+   ▼
+Vercel
+   │
+   ▼
+Next.js
+   │
+   ▼
+Render Web Service
+   │
+   ▼
+FastAPI
+   │
+   ▼
+PostgreSQL
 ```
 
-### PostgreSQL
+The hosted environment is configured with:
 
-Enable pgvector once before applying migrations:
-
-```sql
-CREATE EXTENSION vector;
+```text
+AI_PROVIDER=rule_based
+KNOWLEDGE_INDEX_MODE=sync
 ```
 
-Then apply Alembic migrations.
+This keeps the public demonstration independent of paid AI APIs and a dedicated paid background-worker service.
+
+The complete Celery/Redis asynchronous processing implementation remains available in the repository and is used as the production-style architecture.
+
+### Hosted Demo Limitation
+
+The free Render deployment is intended as a portfolio demonstration rather than a production environment.
+
+Knowledge Base indexing on the hosted free-tier environment may remain in a queued state under some deployment conditions.
+
+The queue, worker, indexing, retry, and synchronous-dispatch logic are implemented and covered by automated tests, but the public free-tier environment should not be considered a production demonstration of the complete background-worker topology.
 
 ---
 
 # AI Configuration
 
-The default local configuration is:
+The default configuration is:
 
 ```env
 AI_PROVIDER=rule_based
@@ -862,25 +1061,27 @@ AI_PROVIDER=rule_based
 
 This requires no external API.
 
-To use the implemented OpenAI triage provider:
+An OpenAI-backed triage provider is also implemented.
+
+It can be enabled through environment configuration:
 
 ```env
 AI_PROVIDER=openai
-AI_API_KEY=...
-AI_MODEL=gpt-6-luna
+AI_API_KEY=your-api-key
+AI_MODEL=your-model
 ```
 
-API keys must only be configured through environment variables and must never be committed to the repository.
+API keys must only be provided through environment variables.
+
+They must never be committed to source control.
 
 ---
 
 # Engineering Decisions
 
-Several implementation choices were made deliberately.
+## Service and Repository Layers
 
-### Service and Repository Layers
-
-Database access is separated from business logic.
+Database access and business logic are separated.
 
 ```text
 API Route
@@ -892,29 +1093,95 @@ Repository
 Database
 ```
 
-This makes the code easier to test and evolve.
+Benefits include:
 
-### Provider Abstractions
+- improved testability
+- clearer business logic
+- easier persistence changes
+- smaller API route handlers
 
-AI-related integrations use provider abstractions.
+---
 
-This allows development implementations and external AI providers to be swapped without rewriting the business logic.
+## Provider Abstractions
 
-### Human-in-the-Loop AI
+AI integrations use provider interfaces instead of coupling business logic directly to one external service.
 
-Generated replies require explicit human review instead of being sent automatically.
+This allows:
 
-### Async Indexing
+```text
+development provider
+        ↕
+external AI provider
+```
 
-Knowledge indexing happens through a queue rather than blocking HTTP requests.
+without rewriting the application workflow.
 
-### Failure State Persistence
+---
 
-Queue failures are recorded in PostgreSQL so that the application can recover after infrastructure outages.
+## Backend-for-Frontend Pattern
 
-### SQL Analytics
+The browser does not call the FastAPI backend directly for authenticated frontend operations.
 
-Operational metrics are aggregated by PostgreSQL instead of retrieving all rows and calculating metrics in the frontend.
+Instead:
+
+```text
+Browser
+   ↓
+Next.js Route Handler
+   ↓
+FastAPI
+```
+
+Next.js reads the HttpOnly authentication cookie and attaches the Bearer token to backend requests.
+
+This keeps authentication details away from normal client-side JavaScript.
+
+---
+
+## Human-in-the-Loop AI
+
+Generated support responses require human review.
+
+The application deliberately avoids automatically sending AI-generated text to customers.
+
+---
+
+## Explicit Workflow Rules
+
+Ticket transitions are validated in backend services instead of relying only on frontend controls.
+
+This prevents invalid state changes when the API is called directly.
+
+---
+
+## Failure-State Persistence
+
+Queue and indexing failures are stored in PostgreSQL.
+
+This means infrastructure problems remain visible and recoverable instead of silently disappearing.
+
+---
+
+## SQL Analytics
+
+Operational analytics are aggregated in PostgreSQL.
+
+The backend does not retrieve all tickets and calculate dashboard metrics in Python or in the browser.
+
+---
+
+## Deployment-Aware Processing
+
+The indexing dispatcher supports both:
+
+```text
+async
+sync
+```
+
+execution strategies.
+
+This allows the same application code to run with different infrastructure constraints.
 
 ---
 
@@ -922,46 +1189,76 @@ Operational metrics are aggregated by PostgreSQL instead of retrieving all rows 
 
 The project currently includes the complete portfolio MVP:
 
-- authentication
-- RBAC
+- user registration
+- JWT authentication
+- HttpOnly frontend authentication flow
+- role-based access control
+- admin and agent roles
+- ticket creation
+- ticket editing
 - ticket workflow
 - ticket assignment
-- AI triage architecture
-- Knowledge Base
-- vector retrieval
-- RAG assistance
+- filtering
+- pagination
+- AI-assisted triage
+- provider abstraction
+- Knowledge Base management
+- vector retrieval architecture
+- RAG-style assistance
 - human review
-- asynchronous indexing
-- queue resilience
-- analytics
-- automated backend tests
+- Celery background-processing architecture
+- Redis-compatible queue integration
+- indexing failure recovery
+- operational analytics
+- PostgreSQL aggregation
+- production database migrations
+- production admin bootstrap
+- Vercel deployment
+- Render deployment
+- backend automated tests
 - frontend production builds
 - GitHub Actions CI
 
-Development-mode AI and embedding providers remain intentionally available so the full application can run locally without paid external APIs.
+The backend currently includes:
 
-Production-grade external embedding and generative reply providers can be added as future extensions.
+```text
+94 automated tests
+```
+
+with separate backend and frontend GitHub Actions pipelines validating pull requests before merge.
+
+Development-mode AI and embedding providers remain intentionally available so that the application can be developed and tested without paid external APIs.
 
 ---
 
 # Future Improvements
 
-Possible next steps include:
+Potential future work includes:
 
 - production embedding provider
-- production LLM reply-generation provider
-- SLA and response-time metrics
+- production generative reply provider
+- dedicated production Celery worker
+- SLA metrics
+- response-time analytics
 - ticket search
 - notifications
-- audit log UI
+- audit-log UI
 - refresh-token authentication
 - rate limiting
-- observability and tracing
+- observability
+- distributed tracing
 - structured production logging
-- end-to-end browser testing
+- browser end-to-end tests
+- containerized deployment
+- additional analytics
+- email and support-channel integrations
 
 ---
 
-## Author
+# Author
 
-Built by [gepapant](https://github.com/gepapant) as a full-stack software engineering portfolio project.
+Built by **gepapant** as a full-stack software engineering portfolio project.
+
+GitHub:
+
+https://github.com/gepapant
