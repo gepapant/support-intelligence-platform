@@ -6,6 +6,38 @@ The project was built as a software engineering portfolio application with a foc
 
 ---
 
+## Live Demo
+
+- **Live Application:** https://support-intelligence-platform-one.vercel.app
+- **API Documentation:** https://support-intelligence-api-s5jr.onrender.com/docs
+- **Source Code:** https://github.com/gepapant/support-intelligence-platform
+
+The public demo is deployed with Next.js on Vercel and FastAPI/PostgreSQL on Render.
+
+> The backend runs on free-tier infrastructure, so the first request after inactivity may require a cold start.
+
+---
+
+## Screenshots
+
+### Ticket Workspace
+
+![Ticket Workspace](docs/screenshots/dashboard.png)
+
+### AI-Assisted Ticket Triage
+
+![AI-Assisted Ticket Triage](docs/screenshots/ai-triage.png)
+
+### Analytics Dashboard
+
+![Analytics Dashboard](docs/screenshots/analytics.png)
+
+### Landing Page
+
+![Support Intelligence Platform](docs/screenshots/landing.png)
+
+---
+
 ## Overview
 
 Support Intelligence Platform models a real customer-support workflow.
@@ -630,7 +662,7 @@ uv run pytest
 Current suite:
 
 ```text
-90 tests
+94 tests
 ```
 
 Run linting:
