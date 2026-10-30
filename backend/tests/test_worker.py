@@ -343,3 +343,38 @@ def test_index_task_marks_failed_after_max_retries(
     assert calls["failed_article_id"] == 42
 
     assert calls["error"] == "Permanent embedding failure"
+
+
+def test_dispatcher_can_index_synchronously(
+    monkeypatch,
+):
+    captured: list[int] = []
+
+    def fake_index(
+        article_id: int,
+    ) -> dict[str, int | str]:
+        captured.append(article_id)
+
+        return {
+            "article_id": article_id,
+            "chunks_indexed": 1,
+            "embedding_model": ("hash-embedding-dev-v2"),
+        }
+
+    monkeypatch.setenv(
+        "KNOWLEDGE_INDEX_MODE",
+        "sync",
+    )
+
+    monkeypatch.setattr(
+        "app.services.knowledge_queue.index_knowledge_article_now",
+        fake_index,
+    )
+
+    dispatcher = KnowledgeIndexDispatcher()
+
+    result = dispatcher.enqueue(42)
+
+    assert captured == [42]
+
+    assert result == "sync-42"
